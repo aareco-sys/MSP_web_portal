@@ -1,65 +1,85 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useMetrics } from "@/hooks/use-data";
+import { Loading, ErrorState, Empty } from "@/components/states";
+import { KpiCard, STATUS_TYPE_COLOR } from "@/components/ui";
+import { BarCard, DonutCard, LineCard } from "@/components/charts";
+import { ExportButton } from "@/components/export-button";
+import { useT, useFormatters } from "@/lib/i18n/context";
+
+export default function OverviewPage() {
+  const { data, isLoading, error } = useMetrics();
+  const t = useT();
+  const { fmtNum, fmtDays } = useFormatters();
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState message={(error as Error).message} />;
+  const m = data!.metrics;
+  if (m.totals.scopedTotal === 0) return <Empty />;
+
+  const statusData = m.byStatus.map((s) => ({
+    name: s.status,
+    value: s.count,
+    color: STATUS_TYPE_COLOR[s.type] ?? undefined,
+  }));
+  const topLists = m.byList.slice(0, 10).map((l) => ({
+    listName: l.listName,
+    open: l.open,
+    resolved: l.resolved,
+  }));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">{t.overview.title}</h1>
+        <ExportButton />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KpiCard label={t.terms.created} value={m.totals.created} />
+        <KpiCard label={t.terms.open} value={m.totals.open} />
+        <KpiCard label={t.overview.resolvedRange} value={m.totals.resolved} />
+        <KpiCard label={t.overview.hoursTracked} value={fmtNum(m.totals.hours, 1)} />
+        <KpiCard
+          label={t.overview.mttrMean}
+          value={fmtDays(m.totals.mttr.mean)}
+          hint={t.overview.medianHint(fmtDays(m.totals.mttr.median))}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <KpiCard
+          label={t.overview.mttdMean}
+          value={fmtDays(m.totals.mttd.mean)}
+          hint={t.overview.medianHint(fmtDays(m.totals.mttd.median))}
+        />
+        <KpiCard label={t.terms.unassigned} value={m.totals.unassigned} />
+        <KpiCard
+          label={t.overview.reopenRate}
+          value={`${fmtNum(m.totals.reopenRate, 1)}%`}
+          hint={t.overview.reopenHint(fmtNum(m.totals.reopened))}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <LineCard
+          title={t.overview.monthlyTrend}
+          data={m.monthly as unknown as Record<string, unknown>[]}
+          xKey="month"
+          lines={[
+            { key: "created", name: t.terms.created },
+            { key: "resolved", name: t.terms.resolved },
+          ]}
+        />
+        <DonutCard title={t.overview.statusDist} data={statusData} />
+      </div>
+
+      <BarCard
+        title={t.overview.topLists}
+        data={topLists}
+        xKey="listName"
+        bars={[
+          { key: "open", name: t.terms.open, color: "#f59e0b" },
+          { key: "resolved", name: t.terms.resolved, color: "#16a34a" },
+        ]}
+        height={320}
+      />
     </div>
   );
 }

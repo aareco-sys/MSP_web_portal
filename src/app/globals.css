@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Impresión / export PDF ── */
+@media print {
+  [data-noprint] {
+    display: none !important;
+  }
+  /* fondo blanco y colores fieles al imprimir */
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-break {
+    break-before: page;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
