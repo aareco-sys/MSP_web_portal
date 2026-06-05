@@ -75,6 +75,13 @@ export function useFormatters() {
         d == null
           ? "—"
           : `${d.toLocaleString(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} d`,
+      /** Duración legible: < 1 día → "X.X h", si no "X.X d". */
+      fmtDur: (d: number | null | undefined): string => {
+        if (d == null) return "—";
+        const n1 = (x: number) =>
+          x.toLocaleString(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        return d < 1 ? `${n1(d * 24)} h` : `${n1(d)} d`;
+      },
       fmtDate: (ms: number | null | undefined): string =>
         ms == null
           ? "—"
@@ -82,6 +89,14 @@ export function useFormatters() {
               dateStyle: "medium",
               timeStyle: "short",
             }),
+      /** Etiqueta de mes 'YYYY-MM' → "mar 26" / "Mar 26". */
+      monthLabel: (ym: string): string => {
+        const [y, m] = ym.split("-");
+        const idx = Number(m) - 1;
+        const d = new Date(2000, idx, 1);
+        const mon = d.toLocaleString(intl, { month: "short" }).replace(".", "");
+        return `${mon} ${y.slice(2)}`;
+      },
     }),
     [intl],
   );

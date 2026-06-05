@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Design handoff (referencia de diseño, no código de la app)
+design_handoff_msp_portal_redesign/

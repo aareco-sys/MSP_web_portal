@@ -1,16 +1,15 @@
 "use client";
 
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { Card } from "./ui";
+import { Inbox } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 
 export function Loading({ label }: { label?: string }) {
   const t = useT();
   return (
-    <Card className="flex items-center justify-center gap-3 py-16 text-neutral-500">
-      <Loader2 className="size-5 animate-spin" />
+    <div className="loader">
+      <div className="spinner" />
       {label ?? t.states.loading}
-    </Card>
+    </div>
   );
 }
 
@@ -18,26 +17,27 @@ export function ErrorState({ message }: { message: string }) {
   const t = useT();
   const isToken = /CLICKUP_TOKEN/i.test(message);
   return (
-    <Card className="flex flex-col items-center gap-2 border-red-200 py-12 text-center dark:border-red-900/50">
-      <AlertTriangle className="size-6 text-red-500" />
-      <div className="font-medium">{t.states.loadError}</div>
-      <div className="max-w-md text-sm text-neutral-500">{message}</div>
+    <div className="card" style={{ alignItems: "center", textAlign: "center", gap: 8, padding: 48 }}>
+      <Inbox className="size-6" style={{ color: "var(--color-danger)" }} />
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>{t.states.loadError}</div>
+      <div style={{ fontSize: 14, color: "var(--color-fg-muted)", maxWidth: 460 }}>{message}</div>
       {isToken ? (
-        <div className="mt-2 max-w-md text-xs text-neutral-400">
+        <div style={{ fontSize: 12, color: "var(--color-fg-subtle)", maxWidth: 460 }}>
           {t.states.tokenHintPre}
           <code>CLICKUP_TOKEN</code>
           {t.states.tokenHintPost}
         </div>
       ) : null}
-    </Card>
+    </div>
   );
 }
 
 export function Empty({ label }: { label?: string }) {
   const t = useT();
   return (
-    <Card className="py-12 text-center text-sm text-neutral-500">
-      {label ?? t.states.empty}
-    </Card>
+    <div className="card" style={{ alignItems: "center", textAlign: "center", gap: 10, padding: 48, color: "var(--color-fg-muted)" }}>
+      <Inbox className="size-7" style={{ color: "var(--color-fg-subtle)" }} />
+      <div style={{ fontSize: 14 }}>{label ?? t.states.empty}</div>
+    </div>
   );
 }
