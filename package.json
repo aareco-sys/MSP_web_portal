@@ -10,7 +10,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clickup:check": "tsx scripts/check-clickup.ts"
+    "clickup:check": "tsx scripts/check-clickup.ts",
+    "serve": "next build && pm2 startOrReload ecosystem.config.cjs",
+    "serve:stop": "pm2 stop ecosystem.config.cjs",
+    "serve:status": "pm2 status",
+    "serve:logs": "pm2 logs msp-portal --lines 50"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
@@ -34,6 +38,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "pm2": "^7.0.1",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5",
