@@ -12,6 +12,11 @@ import {
   LineChart,
   Pie,
   PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -205,6 +210,40 @@ export function LineCard({
               ))}
             </LineChart>
           )}
+        </ResponsiveContainer>
+      </div>
+    </Card>
+  );
+}
+
+export function RadarCard({
+  title,
+  sub,
+  data,
+  engName,
+  teamName,
+  height = 300,
+}: {
+  title: string;
+  sub?: string;
+  data: { axis: string; eng: number; team: number }[];
+  engName: string;
+  teamName: string;
+  height?: number;
+}) {
+  return (
+    <Card title={title} sub={sub}>
+      <div className="chart-wrap" style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={data} outerRadius="72%">
+            <PolarGrid stroke="#e5e8ed" />
+            <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: "#565d6d" }} />
+            <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+            <Radar name={teamName} dataKey="team" stroke="#9aa0ad" fill="#9aa0ad" fillOpacity={0.18} />
+            <Radar name={engName} dataKey="eng" stroke="#3daa6e" fill="#3daa6e" fillOpacity={0.35} />
+            <Legend wrapperStyle={LEGEND} iconType="circle" iconSize={8} />
+            <Tooltip {...TOOLTIP} />
+          </RadarChart>
         </ResponsiveContainer>
       </div>
     </Card>

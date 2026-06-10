@@ -252,6 +252,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-family: var(--font-body
 .delta--flat { color: var(--color-fg-subtle); }
 .delta svg { width: 12px; height: 12px; }
 
+/* inline link */
+.dc-link { color: var(--color-brand); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color var(--dur-fast) var(--ease-out); }
+.dc-link:hover { border-bottom-color: currentColor; }
+
 /* section eyebrow */
 .section-eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-brand); }
 .section-eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--color-brand); }
@@ -268,6 +272,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-family: var(--font-body
 .report-meta { text-align: right; font-family: var(--font-body); font-size: var(--fs-caption); color: var(--color-fg-muted); }
 .report-foot { border-top: 1px solid var(--color-border-strong); margin-top: var(--space-8); padding-top: var(--space-4); text-align: center; font-family: var(--font-body); font-size: 11px; color: var(--color-fg-subtle); }
 
+/* Bloques visibles solo al imprimir (encabezado de reporte de Rex, etc.). */
+.print-only { display: none; }
+
 @media print {
   body, .app, .main { overflow: visible; height: auto; display: block; }
   .sidebar, .topbar, [data-noprint] { display: none !important; }
@@ -275,5 +282,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-family: var(--font-body
   .report-page { max-width: none; padding: 0; }
   .card, .kpi { break-inside: avoid; box-shadow: none; }
   .print-break { break-before: page; }
+  .print-only { display: block; }
+  /* el detalle "En progreso" sale expandido en el PDF aunque esté colapsado. */
+  .rex-ip-detail { display: flex !important; }
   @page { margin: 14mm; }
 }

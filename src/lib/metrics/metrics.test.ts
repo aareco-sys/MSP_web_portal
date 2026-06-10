@@ -27,6 +27,7 @@ function task(over: Partial<Task> & Pick<Task, "id" | "listId">): Task {
     dateCreated: over.dateCreated ?? null,
     dateClosed: over.dateClosed ?? null,
     dateDone: over.dateDone ?? null,
+    dateDue: over.dateDue ?? null,
     id: over.id,
   };
 }

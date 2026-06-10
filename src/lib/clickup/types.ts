@@ -36,6 +36,7 @@ export interface Task {
   dateCreated: number | null;
   dateClosed: number | null;
   dateDone: number | null;
+  dateDue: number | null;
 }
 
 /** Una entrada del historial de estados (de bulk_time_in_status). */

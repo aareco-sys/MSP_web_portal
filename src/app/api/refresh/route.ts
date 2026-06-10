@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { clearDatasetCache, getCachedDataset, getCacheMeta } from "@/lib/clickup";
+import { clearRexCache } from "@/lib/rex";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   try {
     clearDatasetCache();
+    clearRexCache();
     await getCachedDataset({ force: true });
     return NextResponse.json({ ok: true, cache: getCacheMeta() });
   } catch (err) {

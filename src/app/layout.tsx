@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Roboto, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -9,9 +9,25 @@ import { Topbar } from "@/components/topbar";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LOCALE_COOKIE, resolveLocale } from "@/lib/i18n/config";
 
-const display = Montserrat({ subsets: ["latin"], variable: "--font-display" });
-const body = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-body" });
-const ui = Space_Grotesk({ subsets: ["latin"], variable: "--font-ui" });
+// Fuentes de marca self-hosted (TTF variables) — sin dependencia de red.
+const display = localFont({
+  src: "../fonts/Montserrat.ttf",
+  variable: "--font-display",
+  weight: "100 900",
+  display: "swap",
+});
+const body = localFont({
+  src: "../fonts/Roboto.ttf",
+  variable: "--font-body",
+  weight: "100 900",
+  display: "swap",
+});
+const ui = localFont({
+  src: "../fonts/SpaceGrotesk.ttf",
+  variable: "--font-ui",
+  weight: "300 700",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "MSP Metrics Portal — DinoCloud",

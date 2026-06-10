@@ -8,6 +8,7 @@ import {
   FileText,
   LayoutDashboard,
   List as ListIcon,
+  Rocket,
   Users,
 } from "lucide-react";
 import { useLocale, useT, useFormatters } from "@/lib/i18n/context";
@@ -20,6 +21,7 @@ const MAIN = [
   { href: "/listas", key: "lists", Icon: ListIcon },
   { href: "/usuarios", key: "users", Icon: Users },
   { href: "/mensual", key: "monthly", Icon: BarChart3 },
+  { href: "/rex", key: "rex", Icon: Rocket },
 ] as const;
 
 export function Sidebar() {

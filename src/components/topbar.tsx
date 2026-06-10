@@ -6,13 +6,14 @@ import { Download, Globe } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 import { FilterBar } from "./filter-bar";
 
-type SectionKey = "overview" | "lists" | "users" | "monthly" | "report";
+type SectionKey = "overview" | "lists" | "users" | "monthly" | "rex" | "report";
 
 const ROUTE_SECTION: Record<string, SectionKey> = {
   "/": "overview",
   "/listas": "lists",
   "/usuarios": "users",
   "/mensual": "monthly",
+  "/rex": "rex",
   "/reporte": "report",
 };
 
@@ -22,7 +23,8 @@ export function Topbar() {
   const qs = params.toString();
   const t = useT();
 
-  const section = ROUTE_SECTION[pathname] ?? "overview";
+  const section =
+    ROUTE_SECTION[pathname] ?? (pathname.startsWith("/usuarios/") ? "users" : "overview");
   const isReport = section === "report";
   const sectionT = t[section];
 

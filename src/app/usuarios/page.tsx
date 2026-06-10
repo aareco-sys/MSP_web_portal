@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMetrics } from "@/hooks/use-data";
 import { Loading, ErrorState, Empty } from "@/components/states";
 import { DataTable, type Column } from "@/components/data-table";
@@ -10,6 +12,7 @@ import type { UserMetrics } from "@/lib/metrics";
 
 export default function UsuariosPage() {
   const { data, isLoading, error } = useMetrics();
+  const searchParams = useSearchParams();
   const t = useT();
   const { fmtNum } = useFormatters();
   if (isLoading) return <Loading />;
@@ -17,6 +20,7 @@ export default function UsuariosPage() {
   const m = data!.metrics;
   if (m.byUser.length === 0) return <Empty />;
 
+  const qs = searchParams.toString();
   const nameOf = (u: UserMetrics) => (u.userId === 0 ? t.terms.unassigned : u.username);
   const maxHours = Math.max(1, ...m.byUser.map((u) => u.hours));
   const top = m.byUser.slice(0, 15);
@@ -29,10 +33,14 @@ export default function UsuariosPage() {
         u.userId === 0 ? (
           <span className="muted" style={{ color: "var(--color-fg-subtle)" }}>{t.terms.unassigned}</span>
         ) : (
-          <span className="cell-user">
+          <Link
+            href={`/usuarios/${u.userId}${qs ? `?${qs}` : ""}`}
+            className="cell-user"
+            style={{ color: "var(--color-fg)" }}
+          >
             <Avatar name={u.username} />
-            <span className="font-semibold">{u.username}</span>
-          </span>
+            <span className="font-semibold dc-link">{u.username}</span>
+          </Link>
         ),
     },
     { key: "total", header: t.terms.tasks, align: "right", render: (u) => fmtNum(u.total) },

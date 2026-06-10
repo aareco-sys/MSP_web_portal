@@ -62,6 +62,7 @@ interface RawTask {
   date_created?: string;
   date_closed?: string;
   date_done?: string;
+  due_date?: string;
   assignees?: { id: number; username: string; email: string }[];
   tags?: { name: string }[];
   priority?: { priority?: string } | null;
@@ -102,6 +103,7 @@ async function fetchTasksForList(
         dateCreated: toMs(t.date_created),
         dateClosed: toMs(t.date_closed),
         dateDone: toMs(t.date_done),
+        dateDue: toMs(t.due_date),
       });
     }
     if (tasks.length === 0 || res.last_page) break;
