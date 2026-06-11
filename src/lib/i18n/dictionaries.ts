@@ -10,7 +10,8 @@ const es = {
     product: "Portal de métricas",
     confidential: "DinoCloud Internal · Confidential",
     region: "LatAm + U.S.",
-    exportPdf: "Reporte",
+    exportPdf: "Descargar",
+    generated: (d: string) => `Generado: ${d}`,
   },
   language: { label: "Idioma", es: "ES", en: "EN" },
   nav: {
@@ -199,7 +200,8 @@ const en: Messages = {
     product: "Metrics portal",
     confidential: "DinoCloud Internal · Confidential",
     region: "LatAm + U.S.",
-    exportPdf: "Report",
+    exportPdf: "Download",
+    generated: (d: string) => `Generated: ${d}`,
   },
   language: { label: "Language", es: "ES", en: "EN" },
   nav: {

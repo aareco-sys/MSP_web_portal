@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Printer } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useRex } from "@/hooks/use-data";
 import { Loading, ErrorState, Empty } from "@/components/states";
 import { KpiCard, Card } from "@/components/ui";
@@ -71,12 +71,6 @@ export default function RexPage() {
 
   return (
     <>
-      <div data-noprint style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button type="button" className="btn btn--primary" onClick={() => window.print()}>
-          <Printer /> {t.report.printSave}
-        </button>
-      </div>
-
       {/* Encabezado que aparece solo en el PDF */}
       <div className="print-only report-head">
         <div>

@@ -6,6 +6,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { PrintHeader } from "@/components/print-header";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LOCALE_COOKIE, resolveLocale } from "@/lib/i18n/config";
 
@@ -54,6 +55,9 @@ export default async function RootLayout({
                   <Topbar />
                 </Suspense>
                 <div className="content">
+                  <Suspense fallback={null}>
+                    <PrintHeader />
+                  </Suspense>
                   <Suspense fallback={null}>{children}</Suspense>
                 </div>
               </div>

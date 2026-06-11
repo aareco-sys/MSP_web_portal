@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Download, Globe } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 import { FilterBar } from "./filter-bar";
@@ -19,8 +18,6 @@ const ROUTE_SECTION: Record<string, SectionKey> = {
 
 export function Topbar() {
   const pathname = usePathname();
-  const params = useSearchParams();
-  const qs = params.toString();
   const t = useT();
 
   const section =
@@ -40,10 +37,12 @@ export function Topbar() {
           <span className="badge badge--slate">
             <Globe style={{ width: 14, height: 14 }} /> {t.common.region}
           </span>
+          {/* Descarga el dashboard ACTUAL (imprime/guarda PDF de esta vista,
+              respetando filtros). En /reporte se usa su propio botón. */}
           {!isReport ? (
-            <Link className="btn btn--primary" href={`/reporte${qs ? `?${qs}` : ""}`}>
+            <button type="button" className="btn btn--primary" onClick={() => window.print()}>
               <Download /> {t.common.exportPdf}
-            </Link>
+            </button>
           ) : null}
         </div>
       </div>
