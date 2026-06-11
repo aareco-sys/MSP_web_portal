@@ -69,7 +69,14 @@ docker compose up --build   # http://localhost:3000
 
 ## Deploy en AWS
 
-Pendiente (fase de deploy, requiere aprobación). Estrategia de menor costo para pocos
-usuarios: una sola imagen Next.js (EC2 t4g.small + CloudFront + Cognito + Secrets Manager,
-~USD 15/mes; o serverless con OpenNext) + CI/CD por GitHub Actions con OIDC. Los secretos
-(`CLICKUP_TOKEN`) viven en **AWS Secrets Manager**, nunca en el repo.
+Hosting recomendado: **AWS App Runner** (1 vCPU / 2 GB, min 1 instancia para mantener la
+caché tibia) con ventana de servicio L–V 9–20 ART, ~USD 8–10/mes. Secretos en **AWS
+Secrets Manager** (nunca en el repo) y CI/CD por **GitHub Actions con OIDC** (sin access keys).
+
+- **Plan / arquitectura / costos:** [`docs/aws-deployment-plan.md`](docs/aws-deployment-plan.md)
+- **IaC (Terraform):** [`infra/terraform/`](infra/terraform/)
+- **Procedimiento paso a paso con validaciones:** [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
+- **CI/CD:** [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+
+> El deploy a producción **se detiene para aprobación humana explícita** (política
+> DinoCloud). Los pasos `[APROBACIÓN]` del runbook marcan esos gates.

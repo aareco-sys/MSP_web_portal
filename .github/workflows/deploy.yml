@@ -1,0 +1,113 @@
+# DinoCloud Internal - Confidential
+# CD a produccion: build -> push ECR -> deploy App Runner -> healthcheck.
+# Auth a AWS por OIDC (sin access keys). El job corre solo tras aprobacion
+# manual del environment "production" (branch protection + required reviewers).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # permite re-deploy manual del HEAD de main
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # requerido para OIDC
+  contents: read
+
+jobs:
+  # Reusa las mismas validaciones que CI antes de construir la imagen.
+  quality:
+    name: Lint · Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  deploy:
+    name: Build · Push ECR · Deploy App Runner
+    needs: quality
+    runs-on: ubuntu-latest
+    # Gate de aprobacion manual: configurar required reviewers en
+    # Settings -> Environments -> production.
+    environment:
+      name: production
+      url: https://portal.dinocloud.com
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      APPRUNNER_SERVICE_ARN: ${{ vars.APPRUNNER_SERVICE_ARN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login a Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y push de la imagen
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE="$REGISTRY/$ECR_REPOSITORY"
+          SHA="${GITHUB_SHA::12}"
+          docker build -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:latest"
+          echo "Pushed $IMAGE:$SHA y :latest"
+
+      - name: Disparar deploy en App Runner
+        run: |
+          set -euo pipefail
+          OP_ID=$(aws apprunner start-deployment \
+            --service-arn "$APPRUNNER_SERVICE_ARN" \
+            --query 'OperationId' --output text)
+          echo "Deployment OperationId=$OP_ID"
+
+      - name: Esperar a que el servicio quede RUNNING
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            STATUS=$(aws apprunner describe-service \
+              --service-arn "$APPRUNNER_SERVICE_ARN" \
+              --query 'Service.Status' --output text)
+            echo "[$i] Status=$STATUS"
+            if [ "$STATUS" = "RUNNING" ]; then exit 0; fi
+            if [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "DELETE_FAILED" ]; then
+              echo "Deploy fallido (Status=$STATUS)"; exit 1
+            fi
+            sleep 20
+          done
+          echo "Timeout esperando RUNNING"; exit 1
+
+      - name: Healthcheck post-deploy
+        run: |
+          set -euo pipefail
+          URL=$(aws apprunner describe-service \
+            --service-arn "$APPRUNNER_SERVICE_ARN" \
+            --query 'Service.ServiceUrl' --output text)
+          for i in $(seq 1 10); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://$URL/api/health" || echo 000)
+            echo "[$i] GET /api/health -> $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "Healthcheck no respondio 200"; exit 1
