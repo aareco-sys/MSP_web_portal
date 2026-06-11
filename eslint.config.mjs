@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Prototipo de diseño (referencia, no es código de la app).
     "design_handoff_msp_portal_redesign/**",
+    // Config de tooling Node (CommonJS) — no es código de la app.
+    "ecosystem.config.cjs",
   ]),
 ]);
 
