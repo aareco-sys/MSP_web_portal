@@ -24,6 +24,8 @@ export interface ListMetrics {
   resolved: number; // resueltas en el rango (throughput)
   unassigned: number; // abiertas sin asignar (foto)
   statusCounts: Record<string, number>;
+  /** conteo por tipo de estado de ClickUp (para la barra apilada por cliente). */
+  statusByType: { open: number; custom: number; done: number; closed: number };
   hours: number; // horas imputadas en el rango
   avgAgingDays: number | null; // antigüedad media de las abiertas (al fin del rango)
   mttd: Summary; // en días, sobre resueltas en el rango

@@ -96,6 +96,9 @@ const es = {
   lists: {
     title: "Métricas por cliente",
     subtitle: "Una fila por cliente activo",
+    statusByClient: "Estado de tickets por cliente",
+    statusDist: "Distribución por estado",
+    createdVsResolved: "Creadas vs resueltas por cliente",
     mttrVsMttd: "MTTR vs MTTD por cliente (mediana, días)",
     hoursByList: "Horas registradas por cliente",
     detail: "Detalle por cliente",
@@ -188,6 +191,12 @@ const es = {
     normal: "Normal",
     low: "Baja",
     none: "Sin prioridad",
+  },
+  statusType: {
+    open: "Pendientes",
+    custom: "En curso",
+    done: "Resueltas",
+    closed: "Cerradas",
   },
   misc: { liveData: "Datos en vivo", lastSync: "Última sincronización" },
 };
@@ -286,6 +295,9 @@ const en: Messages = {
   lists: {
     title: "Metrics by client",
     subtitle: "One row per active client",
+    statusByClient: "Ticket status by client",
+    statusDist: "Status distribution",
+    createdVsResolved: "Created vs resolved by client",
     mttrVsMttd: "MTTR vs MTTD by client (median, days)",
     hoursByList: "Hours tracked by client",
     detail: "Client detail",
@@ -378,6 +390,12 @@ const en: Messages = {
     normal: "Normal",
     low: "Low",
     none: "No priority",
+  },
+  statusType: {
+    open: "Pending",
+    custom: "In progress",
+    done: "Done",
+    closed: "Closed",
   },
   misc: { liveData: "Live data", lastSync: "Last sync" },
 };

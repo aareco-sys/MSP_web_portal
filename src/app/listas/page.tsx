@@ -3,8 +3,8 @@
 import { useMetrics } from "@/hooks/use-data";
 import { Loading, ErrorState, Empty } from "@/components/states";
 import { DataTable, type Column } from "@/components/data-table";
-import { BarCard } from "@/components/charts";
-import { CHART, PALETTE } from "@/components/ui";
+import { BarCard, DonutCard } from "@/components/charts";
+import { CHART, PALETTE, STATUS_TYPE_COLOR } from "@/components/ui";
 import { useT, useFormatters } from "@/lib/i18n/context";
 import type { ListMetrics } from "@/lib/metrics";
 
@@ -41,6 +41,32 @@ export default function ListasPage() {
     { key: "aging", header: t.lists.agingOpen, align: "right", render: (l) => fmtDur(l.avgAgingDays) },
   ];
 
+  // Estado de tickets por cliente (apilado por tipo de estado) — top 12 por volumen.
+  const statusByClient = [...m.byList]
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 12)
+    .map((l) => ({
+      listName: l.listName,
+      open: l.statusByType.open,
+      custom: l.statusByType.custom,
+      done: l.statusByType.done,
+      closed: l.statusByType.closed,
+    }));
+
+  // Donut global por estado.
+  const statusTotal = m.byStatus.reduce((s, x) => s + x.count, 0);
+  const statusDonut = m.byStatus.map((s) => ({
+    name: s.status,
+    value: s.count,
+    color: STATUS_TYPE_COLOR[s.type],
+  }));
+
+  // Creadas vs resueltas por cliente — top 12 por creadas.
+  const flowData = [...m.byList]
+    .sort((a, b) => b.created - a.created)
+    .slice(0, 12)
+    .map((l) => ({ listName: l.listName, created: l.created, resolved: l.resolved }));
+
   const mttrData = m.byList
     .filter((l) => l.mttr.median != null)
     .sort((a, b) => (b.mttr.median ?? 0) - (a.mttr.median ?? 0))
@@ -54,7 +80,39 @@ export default function ListasPage() {
 
   return (
     <>
+      <div className="chart-row-2">
+        <BarCard
+          title={t.lists.statusByClient}
+          data={statusByClient}
+          xKey="listName"
+          stacked
+          bars={[
+            { key: "open", name: t.statusType.open, color: STATUS_TYPE_COLOR.open },
+            { key: "custom", name: t.statusType.custom, color: STATUS_TYPE_COLOR.custom },
+            { key: "done", name: t.statusType.done, color: STATUS_TYPE_COLOR.done },
+            { key: "closed", name: t.statusType.closed, color: STATUS_TYPE_COLOR.closed },
+          ]}
+          height={320}
+        />
+        <DonutCard
+          title={t.lists.statusDist}
+          data={statusDonut}
+          centerTop={fmtNum(statusTotal)}
+          centerBottom={t.terms.tasks}
+        />
+      </div>
+
       <div className="chart-row-eq">
+        <BarCard
+          title={t.lists.createdVsResolved}
+          data={flowData}
+          xKey="listName"
+          bars={[
+            { key: "created", name: t.terms.created, color: CHART.created },
+            { key: "resolved", name: t.terms.resolved, color: CHART.resolved },
+          ]}
+          height={320}
+        />
         <BarCard
           title={t.lists.mttrVsMttd}
           data={mttrData}
@@ -65,15 +123,16 @@ export default function ListasPage() {
           ]}
           height={320}
         />
-        <BarCard
-          title={t.lists.hoursByList}
-          data={hoursData}
-          xKey="listName"
-          horizontal
-          bars={[{ key: "hours", name: t.terms.hours, color: CHART.hours }]}
-          height={320}
-        />
       </div>
+
+      <BarCard
+        title={t.lists.hoursByList}
+        data={hoursData}
+        xKey="listName"
+        horizontal
+        bars={[{ key: "hours", name: t.terms.hours, color: CHART.hours }]}
+        height={340}
+      />
 
       <DataTable title={t.lists.detail} columns={columns} rows={m.byList} />
     </>

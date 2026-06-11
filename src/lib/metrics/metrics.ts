@@ -111,6 +111,7 @@ export function computeMetrics(
         resolved: 0,
         unassigned: 0,
         statusCounts: {},
+        statusByType: { open: 0, custom: 0, done: 0, closed: 0 },
         hours: 0,
         avgAgingDays: null,
         mttd: { mean: null, median: null, p90: null, count: 0 },
@@ -128,6 +129,7 @@ export function computeMetrics(
     const m = ensureList(t.listId);
     m.total += 1;
     m.statusCounts[t.status] = (m.statusCounts[t.status] ?? 0) + 1;
+    m.statusByType[t.statusType] += 1;
   }
   for (const t of createdInRange) ensureList(t.listId).created += 1;
   for (const t of openSnapshot) {
