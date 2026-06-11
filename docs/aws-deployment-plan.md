@@ -13,10 +13,10 @@ Llevar a producción en AWS el **MSP Metrics Portal** — dashboard interno de m
 
 La app es hoy **una sola aplicación Next.js 16** (build de producción `standalone`, imagen Docker única) que:
 - renderiza dashboards SSR dinámicos (Overview, Listas, Ingenieros, Mensual, Rex, Reporte, scorecards);
-- consume la **API de ClickUp server-side** con un token, y **cachea el dataset en memoria** (TTL 30 min);
+- consume la **API de ClickUp server-side** con un token, y **cachea en memoria** el dataset principal (clientes activos) y la lista **Rex** — **2 cachés** independientes con TTL 30 min;
 - el primer fetch en frío tarda ~15–20 s (recorre listas + time-in-status + imputaciones por tarea).
 
-> **Implicancia de arquitectura:** la caché en memoria pide una **instancia siempre tibia** (1 instancia mínima). Por eso **serverless scale-to-zero (Lambda) NO es buen fit** (cada cold start re-traería todo el dataset → 15–20 s + N llamadas a ClickUp + riesgo de rate-limit). Ver §7.
+> **Implicancia de arquitectura:** las cachés en memoria piden una **instancia siempre tibia** (1 instancia mínima). Por eso **serverless scale-to-zero (Lambda) NO es buen fit** (cada cold start re-traería todo el dataset → 15–20 s + N llamadas a ClickUp + riesgo de rate-limit). Ver §7.
 
 | Métrica objetivo | Valor |
 |---|---|
@@ -80,6 +80,7 @@ La app es hoy **una sola aplicación Next.js 16** (build de producción `standal
 | Compute | **App Runner** 1 vCPU / 2 GB, min 1 instancia | Caché tibia + HTTPS sin ALB. 2 GB cubre el pico del fetch en frío. |
 | Auth | **Auth.js (NextAuth v5) + Cognito User Pool** (email + MFA TOTP) | La auth vive dentro de la app (middleware protege todas las rutas). Cognito free <50k MAU. |
 | Secretos | **AWS Secrets Manager** (`CLICKUP_TOKEN`, `AUTH_SECRET`, `COGNITO_CLIENT_SECRET`) | Inyectados como env en runtime (App Runner lo soporta nativo). Nunca en imagen ni repo. Rotables. |
+| Config no-secreta | env vars de App Runner | `CLICKUP_TEAM_ID`, `CLICKUP_SPACE_ID`, `CLICKUP_ACTIVE_FOLDER_IDS`, `CLICKUP_REX_LIST_ID`, `MSP_CACHE_TTL`, `MSP_LOOKBACK_DAYS`, `NODE_OPTIONS`. Todas con default en el código; el único obligatorio es el token. |
 | Registry | **ECR** privado | Imagen por commit SHA; lifecycle policy (últimas 10). |
 | DNS / TLS | **Route 53** + cert gestionado de App Runner | `portal.dinocloud.com`, TLS automático. |
 | Observabilidad | **CloudWatch** logs + métricas + alarma 5xx/health | `/api/health` (sin auth ni ClickUp) para el healthcheck. |
@@ -97,7 +98,7 @@ La app solo debe estar disponible **Lunes a Viernes de 9 a 20 (hora Argentina, U
   - **Resume** a las **08:50** L–V → `apprunner:ResumeService` (margen para que esté listo a las 9:00, incluye ~1–2 min de arranque).
   - **Pause** a las **20:00** L–V → `apprunner:PauseService`.
 - Una **Lambda** mínima (o el target nativo de Scheduler a la API de App Runner) ejecuta pause/resume con un IAM role acotado a ese servicio.
-- **Warm-up opcional** post-resume: un `curl` interno a `/api/metrics` a las 08:55 para precalentar la caché (el fetch en frío tarda ~15–20 s); así el primer usuario ya la encuentra tibia.
+- **Warm-up opcional** post-resume: un `curl` interno a `/api/metrics` **y `/api/rex`** a las 08:55 para precalentar ambas cachés (el fetch en frío tarda ~15–20 s); así el primer usuario ya las encuentra tibias.
 - **Fuera de la ventana:** el endpoint responde *no disponible* (servicio pausado) — comportamiento buscado (restringe acceso + ahorra costo). Acceso puntual fuera de horario: `apprunner:ResumeService` manual (<2 min) o desactivar la regla.
 
 > Alternativa equivalente con **EC2**: reglas de EventBridge + `ec2:StartInstances`/`StopInstances` (mismo patrón). Con EC2 la caché se enfría al apagar; con App Runner pausado, al reanudar también arranca en frío → en ambos casos el primer acceso del día hace el fetch completo (mitigado por el warm-up).
@@ -190,9 +191,10 @@ GitHub (push a main)
 ## 7. Notas técnicas que condicionan el deploy
 
 - **Memoria:** el `next dev` sufre OOM en sesiones largas (Turbopack/HMR); **en prod se corre el build (`next start`/standalone)**, mucho más estable. Igual conviene fijar `NODE_OPTIONS=--max-old-space-size` acorde a la RAM de la instancia (p.ej. 1536 en 2 GB) y dejar que el orquestador reinicie ante OOM.
-- **Caché en memoria (TTL 30 min):** requiere **min 1 instancia** persistente. Si se escala a >1 instancia, cada una tiene su caché (aceptable; el botón 🔄 / `/api/refresh` limpia la local). Por eso se evita scale-to-zero.
-- **Cold fetch:** primer request tras arranque/TTL tarda ~15–20 s. Opcional: warm-up post-deploy con un `curl` interno a `/api/metrics`.
+- **Cachés en memoria (TTL 30 min):** son **dos** — dataset principal (`/api/metrics`, `/api/users/*`) y lista **Rex** (`/api/rex`). Requieren **min 1 instancia** persistente. Si se escala a >1 instancia, cada una tiene sus cachés (aceptable; `/api/refresh` limpia ambas en la instancia local). Por eso se evita scale-to-zero.
+- **Cold fetch:** primer request tras arranque/TTL tarda ~15–20 s. Opcional: warm-up post-deploy con un `curl` interno a `/api/metrics` y `/api/rex`.
 - **`output: standalone`** se activa solo en el build de imagen (`NEXT_OUTPUT=standalone`, ver `Dockerfile`); local usa `next start` normal.
+- **Fuentes self-hosted** (`next/font/local`, Montserrat/Roboto/Space Grotesk en `src/fonts/`): el build **no depende de Google Fonts** → imagen reproducible y CI sin acceso a red externa.
 - **Healthcheck:** `GET /api/health` (no requiere auth ni ClickUp).
 
 ---
@@ -206,7 +208,8 @@ GitHub (push a main)
 
 **Fase 1 — Infra base (IaC)**
 - [ ] Terraform: ECR, Secrets Manager (con `CLICKUP_TOKEN`), Cognito User Pool (MFA), App Runner service, IAM roles, OIDC GitHub↔AWS, Route 53 + dominio.
-- [ ] **Schedule L–V 9–20 ART**: EventBridge Scheduler (resume 08:50 / pause 20:00, tz `America/Argentina/Buenos_Aires`) + Lambda con role acotado a `apprunner:Pause/ResumeService`; warm-up `/api/metrics` 08:55.
+- [ ] **Schedule L–V 9–20 ART**: EventBridge Scheduler (resume 08:50 / pause 20:00, tz `America/Argentina/Buenos_Aires`) + Lambda con role acotado a `apprunner:Pause/ResumeService`; warm-up `/api/metrics` + `/api/rex` 08:55.
+- [ ] Config no-secreta de App Runner (env): `CLICKUP_TEAM_ID/SPACE_ID/ACTIVE_FOLDER_IDS/REX_LIST_ID`, `MSP_CACHE_TTL`, `MSP_LOOKBACK_DAYS`, `NODE_OPTIONS` (todas con default; el token va por Secrets Manager).
 
 **Fase 2 — Auth en la app (código)**
 - [ ] Integrar **Auth.js (NextAuth v5) + Cognito** + middleware que protege todas las rutas. (`AUTH_SECRET`, `COGNITO_*` desde Secrets Manager.)
