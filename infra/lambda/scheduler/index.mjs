@@ -25,7 +25,11 @@ export const handler = async () => {
       const res = await fetch(url, {
         method: "GET",
         signal: AbortSignal.timeout(55_000),
-        headers: { "user-agent": "msp-portal-warmup" },
+        headers: {
+          "user-agent": "msp-portal-warmup",
+          // El proxy de auth deja pasar el warm-up con este header.
+          ...(process.env.WARMUP_TOKEN ? { "x-warmup-token": process.env.WARMUP_TOKEN } : {}),
+        },
       });
       const ms = Date.now() - started;
       console.log(`warmup ${path} -> ${res.status} (${ms}ms)`);

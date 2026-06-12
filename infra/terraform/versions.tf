@@ -14,19 +14,20 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.4"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 
   # Completar con los outputs de ./bootstrap (terraform output backend_hcl).
-  # Se deja comentado para permitir un primer `terraform init` local; activarlo
-  # apenas exista el bucket de state.
-  #
-  # backend "s3" {
-  #   bucket         = "msp-portal-tfstate-<ACCOUNT_ID>"
-  #   key            = "msp-portal/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "msp-portal-tflock"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "msp-portal-tfstate-489407728194"
+    key            = "msp-portal/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "msp-portal-tflock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {

@@ -60,11 +60,11 @@ resource "aws_iam_role_policy" "apprunner_instance_secrets" {
 }
 
 # ── 3. GitHub OIDC + deploy role ────────────────────────────────────────────────
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  # Thumbprint de GitHub Actions OIDC (verificar vigencia al aplicar).
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+# El proveedor OIDC de GitHub es GLOBAL por cuenta y suele existir ya (lo comparten
+# otros workloads). Se referencia como data source en vez de crearlo/pisarlo
+# (AWS permite un solo provider por URL por cuenta).
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
 }
 
 data "aws_iam_policy_document" "github_assume" {
@@ -72,7 +72,7 @@ data "aws_iam_policy_document" "github_assume" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
     condition {
       test     = "StringEquals"

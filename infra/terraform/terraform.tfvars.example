@@ -10,6 +10,11 @@ environment  = "production"
 domain_name     = "portal.dinocloud.com"
 route53_zone_id = "" # Z0123456789ABCDEFGHIJ (hosted zone de dinocloud.com)
 
+# URL publica para auth (AUTH_URL + callback/logout de Cognito). Mientras no haya
+# dominio custom, poner la URL default de App Runner:
+#   terraform output apprunner_default_url
+app_base_url = "" # ej: https://xxxxx.us-east-1.awsapprunner.com
+
 # IDs del workspace ClickUp (NO secretos; especificos del workspace).
 clickup_config = {
   CLICKUP_TEAM_ID            = ""

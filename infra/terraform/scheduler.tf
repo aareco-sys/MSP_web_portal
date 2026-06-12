@@ -9,6 +9,13 @@ locals {
   schedule_count = var.enable_service_schedule ? 1 : 0
 }
 
+# Token compartido entre App Runner (env WARMUP_TOKEN) y la Lambda de warm-up,
+# para que el proxy de auth deje pasar el precalentamiento de /api/metrics y /api/rex.
+resource "random_password" "warmup" {
+  length  = 32
+  special = false
+}
+
 # ── Role para que Scheduler llame a la API de App Runner ─────────────────────────
 data "aws_iam_policy_document" "scheduler_assume" {
   statement {
@@ -133,6 +140,7 @@ resource "aws_lambda_function" "warmup" {
     variables = {
       TARGET_BASE_URL = "https://${aws_apprunner_service.app.service_url}"
       WARMUP_PATHS    = join(",", var.warmup_paths)
+      WARMUP_TOKEN    = random_password.warmup.result
     }
   }
 }

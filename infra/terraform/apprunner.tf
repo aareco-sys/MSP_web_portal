@@ -26,7 +26,15 @@ resource "aws_apprunner_service" "app" {
       image_configuration {
         port = "3000"
 
-        runtime_environment_variables = merge(var.app_env, var.clickup_config)
+        runtime_environment_variables = merge(var.app_env, var.clickup_config, {
+          # Auth (Cognito OIDC). El client secret va por Secrets Manager (abajo).
+          AUTH_URL                 = var.app_base_url
+          COGNITO_CLIENT_ID        = aws_cognito_user_pool_client.app.id
+          COGNITO_HOSTED_UI_DOMAIN = "${aws_cognito_user_pool_domain.main.domain}.auth.${var.region}.amazoncognito.com"
+          COGNITO_ISSUER           = "https://cognito-idp.${var.region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
+          # Permite el warm-up interno de cachas a traves del proxy de auth.
+          WARMUP_TOKEN = random_password.warmup.result
+        })
 
         # Secretos inyectados por ARN (App Runner los resuelve en runtime).
         runtime_environment_secrets = {
@@ -54,6 +62,10 @@ resource "aws_apprunner_service" "app" {
   }
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.app.arn
+
+  # El secreto COGNITO_CLIENT_SECRET (version) debe existir antes de deployar,
+  # si no App Runner falla al inyectarlo.
+  depends_on = [aws_secretsmanager_secret_version.cognito_client_secret]
 
   # El primer deploy requiere que exista una imagen en ECR. Si se aplica antes
   # de publicar la primera imagen, App Runner queda en CREATE_FAILED: publicar

@@ -28,31 +28,77 @@ Si una validación falla (**❌**), **parar** y resolver antes de continuar — 
 ## Paso 0 — Configurar AWS CLI en tu terminal local
 
 > No tenés el CLI configurado todavía. Esto corre en **tu máquina**, no en el repo.
+> Es **solo config local**: no crea infra ni toca producción (no aplica el gate
+> `[APROBACIÓN]`).
+>
+> 🔐 **Las access keys NUNCA se commitean ni se pegan en chats/tickets/artefactos.**
+> Viven solo en `~/.aws/credentials`. El *Secret Access Key* se muestra una sola vez
+> al crearlo.
 
-**Acción:**
+### Método activo: IAM user + access keys
+
+(La cuenta de deploy no tiene IAM Identity Center. Ver más abajo la alternativa SSO,
+recomendada a futuro.)
+
+**0.1 — Crear el IAM user y sus access keys (consola AWS):**
+
+- IAM → Users → crear (o reutilizar) un usuario para el deploy, p.ej. `msp-portal-deploy`.
+- **Habilitar MFA** en ese usuario (Security credentials → Assign MFA).
+- Permisos para el setup: una política de admin acotada, o `AdministratorAccess`
+  **temporal solo para el bootstrap** (a refinar a least-privilege una vez creada la infra).
+- Security credentials → **Create access key → "Command Line Interface (CLI)"**.
+  Guardá el *Access Key ID* y el *Secret* (este último solo se ve una vez).
+
+**0.2 — Instalar herramientas:**
 
 ```bash
-# Instalar (macOS)
-brew install awscli terraform
-# o Linux: ver https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-
-# Configurar credenciales. Preferir AWS IAM Identity Center (SSO):
-aws configure sso
-#   SSO start URL / region, y elegir la cuenta+rol de DinoCloud para MSP.
-# Alternativa (si la org usa keys): aws configure  (NUNCA commitear las keys)
-
-export AWS_REGION=us-east-1
-export AWS_PROFILE=<tu-perfil>   # el que creó `aws configure sso`
+brew install awscli terraform   # macOS
+aws --version                   # aws-cli/2.x.x
+terraform -version              # >= 1.6
 ```
 
-**✅ Validar:**
+**0.3 — Configurar el perfil (las keys se TIPEAN en la terminal, no en el chat):**
+
+```bash
+aws configure --profile msp-portal
+#   AWS Access Key ID     : <pegás en la terminal>
+#   AWS Secret Access Key : <pegás en la terminal>
+#   Default region name   : us-east-1
+#   Default output format : json
+
+export AWS_PROFILE=msp-portal
+export AWS_REGION=us-east-1
+```
+
+**0.4 — (Opcional, recomendado) sesión temporal con MFA**, para no operar con las
+keys de larga duración crudas:
+
+```bash
+aws sts get-session-token \
+  --serial-number arn:aws:iam::<ACCOUNT_ID>:mfa/<tu-user> \
+  --token-code <codigo-MFA-de-6-digitos>
+# Exportá AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN de la salida.
+```
+
+**0.5 — ✅ Validar:**
 
 ```bash
 aws sts get-caller-identity
+aws configure list --profile msp-portal   # region = us-east-1
 ```
 
-Debe devolver tu `Account`, `UserId` y `Arn`. **❌** Si da error de credenciales, no
-sigas: re-corré `aws configure sso` / revisá el perfil.
+`get-caller-identity` devuelve `Account`, `UserId` y `Arn` (no expone secretos).
+**❌** Si da error de credenciales, no sigas: revisá el perfil / `aws configure --profile msp-portal`.
+
+### Alternativa recomendada a futuro: IAM Identity Center (SSO)
+
+> Identity Center se habilita **una vez por organización** (en la cuenta management);
+> la *start URL* es **org-wide**, no por cuenta. Si DinoCloud lo habilita, migrá a SSO:
+
+```bash
+aws configure sso     # start URL + región de la org; elegir cuenta+rol; profile msp-portal
+aws sso login --profile msp-portal   # renovar el token cuando caduque
+```
 
 ---
 
@@ -118,10 +164,14 @@ después creamos el servicio (Paso 6).
 
 ```bash
 # Aplicar todo MENOS el servicio App Runner y sus dependientes (scheduler/dns).
+# Incluye las VERSIONES placeholder de los secretos: deben existir ANTES de cargar
+# el valor real por CLI (Paso 4); con ignore_changes el valor real no se pisa luego.
 terraform apply \
   -target=aws_ecr_repository.app \
   -target=aws_secretsmanager_secret.clickup_token \
+  -target=aws_secretsmanager_secret_version.clickup_token \
   -target=aws_secretsmanager_secret.auth_secret \
+  -target=aws_secretsmanager_secret_version.auth_secret \
   -target=aws_cognito_user_pool.main \
   -target=aws_cognito_user_pool_client.app \
   -target=aws_iam_role.apprunner_access \

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Download, Globe } from "lucide-react";
+import { Download, Globe, LogOut } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 import { FilterBar } from "./filter-bar";
 
@@ -44,6 +44,10 @@ export function Topbar() {
               <Download /> {t.common.exportPdf}
             </button>
           ) : null}
+          {/* Cierre de sesión (Cognito). El proxy protege todas las rutas. */}
+          <a className="btn btn--ghost" href="/api/auth/logout" title="Cerrar sesión">
+            <LogOut style={{ width: 14, height: 14 }} />
+          </a>
         </div>
       </div>
       {!isReport ? <FilterBar /> : null}

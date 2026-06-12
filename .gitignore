@@ -53,3 +53,8 @@ crash.log
 !*.tfvars.example
 .terraform.lock.hcl
 infra/terraform/.build/
+
+# Terraform saved plans (pueden contener valores sensibles) y patches sueltos
+tfplan
+*.tfplan
+*.patch

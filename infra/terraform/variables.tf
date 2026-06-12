@@ -54,6 +54,11 @@ variable "app_env" {
     NODE_ENV               = "production"
     NEXT_TELEMETRY_DISABLED = "1"
     NODE_OPTIONS           = "--max-old-space-size=1536"
+    # App Runner inyecta su propio HOSTNAME (nombre interno de la instancia) que
+    # pisa el del Dockerfile; el server standalone de Next lo usa para bindear.
+    # Forzamos 0.0.0.0 aca para que escuche en todas las interfaces (healthcheck).
+    HOSTNAME               = "0.0.0.0"
+    PORT                   = "3000"
     MSP_CACHE_TTL          = "30"
     MSP_LOOKBACK_DAYS      = "90"
     # Los IDs de ClickUp se cargan via terraform.tfvars (no son secretos pero
@@ -79,6 +84,17 @@ variable "route53_zone_id" {
   type        = string
   default     = ""
   description = "Zone ID de la hosted zone de dinocloud.com. Vacio = no se gestiona DNS (validar a mano)."
+}
+
+variable "app_base_url" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    URL publica desde la que se sirve la app (sin trailing slash). Se usa como
+    AUTH_URL y para las callback/logout URLs de Cognito. Mientras no haya dominio
+    custom, poner la URL default de App Runner (terraform output apprunner_default_url),
+    ej: https://xxxxx.us-east-1.awsapprunner.com. Vacio = solo se usa el dominio custom.
+  EOT
 }
 
 # ── CI/CD (OIDC GitHub) ─────────────────────────────────────────────────────────
