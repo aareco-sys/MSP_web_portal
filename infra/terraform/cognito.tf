@@ -53,14 +53,15 @@ resource "aws_cognito_user_pool_client" "app" {
   supported_identity_providers         = ["COGNITO"]
 
   # Incluye la URL default de App Runner (var.app_base_url) y el dominio custom.
-  callback_urls = compact([
+  # distinct() evita duplicados cuando app_base_url == dominio custom (post-cutover).
+  callback_urls = distinct(compact([
     var.app_base_url != "" ? "${var.app_base_url}/api/auth/callback" : "",
     "https://${var.domain_name}/api/auth/callback",
-  ])
-  logout_urls = compact([
+  ]))
+  logout_urls = distinct(compact([
     var.app_base_url != "" ? var.app_base_url : "",
     "https://${var.domain_name}",
-  ])
+  ]))
 
   explicit_auth_flows = [
     "ALLOW_USER_SRP_AUTH",
