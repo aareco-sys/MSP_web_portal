@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthConfig, STATE_COOKIE, PKCE_COOKIE } from "@/lib/auth/config";
+import { getAuthConfig, STATE_COOKIE, PKCE_COOKIE, STATE_TTL_SECONDS } from "@/lib/auth/config";
 import { authorizeUrl, pkcePair, randomToken } from "@/lib/auth/oidc";
 
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export function GET() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
-    maxAge: 600, // 10 min para completar el login
+    maxAge: STATE_TTL_SECONDS, // 30 min para completar el login
   };
   res.cookies.set(STATE_COOKIE, state, opts);
   res.cookies.set(PKCE_COOKIE, verifier, opts);

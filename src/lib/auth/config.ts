@@ -45,7 +45,9 @@ export function isAuthEnabled(): boolean {
 export const SESSION_COOKIE = "msp_session";
 export const STATE_COOKIE = "msp_oauth_state";
 export const PKCE_COOKIE = "msp_oauth_pkce";
+export const RETRY_COOKIE = "msp_oauth_retry";
 export const SESSION_TTL_SECONDS = 8 * 60 * 60; // 8 h (cubre la ventana de servicio)
+export const STATE_TTL_SECONDS = 30 * 60; // 30 min para completar el login (MFA lento / setup inicial)
 
 /** Rutas accesibles sin sesión. */
 export const PUBLIC_PATHS = ["/api/health", "/api/auth/login", "/api/auth/callback", "/api/auth/logout"];

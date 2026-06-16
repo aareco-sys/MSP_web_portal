@@ -4,6 +4,7 @@ import {
   STATE_COOKIE,
   PKCE_COOKIE,
   SESSION_COOKIE,
+  RETRY_COOKIE,
   SESSION_TTL_SECONDS,
 } from "@/lib/auth/config";
 import { exchangeCode, verifyIdToken } from "@/lib/auth/oidc";
@@ -26,8 +27,31 @@ export async function GET(req: NextRequest) {
   const expectedState = req.cookies.get(STATE_COOKIE)?.value;
   const verifier = req.cookies.get(PKCE_COOKIE)?.value;
 
+  // State ausente/expirado/no coincidente (cookie vieja, login en otra pestaña,
+  // o demora > TTL). En vez de trabar al usuario, reintentamos el login UNA vez
+  // automaticamente; si vuelve a fallar, mostramos un mensaje claro (sin loop).
   if (!code || !state || !expectedState || state !== expectedState || !verifier) {
-    return NextResponse.json({ error: "OAuth state inválido" }, { status: 400 });
+    const alreadyRetried = req.cookies.get(RETRY_COOKIE)?.value === "1";
+    if (!alreadyRetried) {
+      const res = NextResponse.redirect(new URL("/api/auth/login", cfg.baseUrl));
+      res.cookies.set(RETRY_COOKIE, "1", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 120,
+      });
+      return res;
+    }
+    const res = NextResponse.json(
+      {
+        error:
+          "No se pudo iniciar sesión. Probá de nuevo; si persiste, habilitá las cookies del sitio o usá otro navegador.",
+      },
+      { status: 400 },
+    );
+    res.cookies.delete(RETRY_COOKIE);
+    return res;
   }
 
   try {
@@ -45,6 +69,7 @@ export async function GET(req: NextRequest) {
     });
     res.cookies.delete(STATE_COOKIE);
     res.cookies.delete(PKCE_COOKIE);
+    res.cookies.delete(RETRY_COOKIE);
     return res;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error de autenticación";
