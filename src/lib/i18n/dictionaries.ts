@@ -77,6 +77,7 @@ const es = {
     created: "Creadas",
     unassigned: "Sin asignar",
     days: "días",
+    trend: "Tendencia",
   },
   overview: {
     title: "Overview",
@@ -278,6 +279,7 @@ const en: Messages = {
     created: "Created",
     unassigned: "Unassigned",
     days: "days",
+    trend: "Trend",
   },
   overview: {
     title: "Overview",
