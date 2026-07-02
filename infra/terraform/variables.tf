@@ -114,6 +114,12 @@ variable "github_deploy_branch" {
   description = "Branch desde el que CI puede deployar a prod."
 }
 
+variable "github_deploy_environment" {
+  type        = string
+  default     = "production"
+  description = "Environment de GitHub del job de deploy (cambia el sub del token OIDC a environment:<nombre>)."
+}
+
 # ── Ventana de servicio (schedule L-V 9-20 ART) ─────────────────────────────────
 variable "enable_service_schedule" {
   type        = bool
