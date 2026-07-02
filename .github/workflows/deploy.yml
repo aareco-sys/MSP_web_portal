@@ -74,18 +74,14 @@ jobs:
           docker push "$IMAGE:latest"
           echo "Pushed $IMAGE:$SHA y :latest"
 
-      - name: Disparar deploy en App Runner
+      # App Runner tiene auto_deployments_enabled=true: el push de :latest de arriba
+      # YA dispara el deploy. No llamamos start-deployment (chocaría con el auto-deploy
+      # y falla con "isn't in RUNNING state"). Solo esperamos a que termine.
+      - name: Esperar a que el auto-deploy quede RUNNING
         run: |
           set -euo pipefail
-          OP_ID=$(aws apprunner start-deployment \
-            --service-arn "$APPRUNNER_SERVICE_ARN" \
-            --query 'OperationId' --output text)
-          echo "Deployment OperationId=$OP_ID"
-
-      - name: Esperar a que el servicio quede RUNNING
-        run: |
-          set -euo pipefail
-          for i in $(seq 1 30); do
+          sleep 25   # margen para que el auto-deploy pase a OPERATION_IN_PROGRESS
+          for i in $(seq 1 40); do
             STATUS=$(aws apprunner describe-service \
               --service-arn "$APPRUNNER_SERVICE_ARN" \
               --query 'Service.Status' --output text)
