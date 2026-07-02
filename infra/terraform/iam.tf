@@ -79,11 +79,15 @@ data "aws_iam_policy_document" "github_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    # Solo el branch de deploy del repo autorizado puede asumir el rol.
+    # El job de deploy corre en el environment `production`, así que GitHub emite
+    # el sub como `...:environment:production` (no el de branch). Se aceptan ambos.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}"]
+      values = [
+        "repo:${var.github_owner}/${var.github_repo}:environment:${var.github_deploy_environment}",
+        "repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}",
+      ]
     }
   }
 }
