@@ -69,14 +69,20 @@ export function computeMetrics(
   const enriched = enrichTasks(dataset.tasks, dataset.statusHistory);
   const scoped = enriched.filter((t) => taskMatchesScope(t, filters));
 
-  // Subconjuntos por-métrica.
-  const createdInRange = scoped.filter(
+  // Las SUBTAREAS no son tickets: se excluyen de todos los CONTEOS. Sus horas
+  // sí cuentan, porque salen de los time entries por tarea (no de esta lista).
+  const topLevel = scoped.filter((t) => !t.isSubtask);
+  const subtasksScoped = scoped.filter((t) => t.isSubtask);
+  const subtaskCount = subtasksScoped.length;
+
+  // Subconjuntos por-métrica (solo tareas de nivel superior).
+  const createdInRange = topLevel.filter(
     (t) => noRange || inRange(t.createdTs, start, end),
   );
-  const resolvedInRange = scoped.filter(
+  const resolvedInRange = topLevel.filter(
     (t) => t.resolvedTs != null && (noRange || inRange(t.resolvedTs, start, end)),
   );
-  const openSnapshot = scoped.filter((t) => openAsOf(t, boundary));
+  const openSnapshot = topLevel.filter((t) => openAsOf(t, boundary));
 
   // Universo "relevante a la ventana": unión de los tres (para estados/prioridad).
   const windowMap = new Map<string, EnrichedTask>();
@@ -110,6 +116,7 @@ export function computeMetrics(
         open: 0,
         resolved: 0,
         unassigned: 0,
+        subtasks: 0,
         statusCounts: {},
         statusByType: { open: 0, custom: 0, done: 0, closed: 0 },
         hours: 0,
@@ -148,6 +155,8 @@ export function computeMetrics(
     if (!e.listId) continue;
     ensureList(e.listId).hours += msToHours(e.durationMs);
   }
+  // Subtareas por cliente (solo desglose; no entran en total/created/etc.).
+  for (const t of subtasksScoped) ensureList(t.listId).subtasks += 1;
   const byList: ListMetrics[] = [...listMap.values()].map((m) => {
     const { _mttd, _mttr, _aging, ...rest } = m;
     return {
@@ -165,7 +174,7 @@ export function computeMetrics(
   const ensureUser = (id: number, username: string, email: string) => {
     let u = userMap.get(id);
     if (!u) {
-      u = { userId: id, username, email, total: 0, open: 0, resolved: 0, hours: 0 };
+      u = { userId: id, username, email, total: 0, open: 0, resolved: 0, hours: 0, subtasks: 0 };
       userMap.set(id, u);
     }
     return u;
@@ -179,6 +188,7 @@ export function computeMetrics(
   for (const t of resolvedInRange) eachAssignee(t, (u) => (u.resolved += 1));
   for (const e of entriesInRange)
     ensureUser(e.userId, e.username, e.email).hours += msToHours(e.durationMs);
+  for (const t of subtasksScoped) eachAssignee(t, (u) => (u.subtasks += 1));
   const byUser = [...userMap.values()]
     .map((u) => ({ ...u, hours: round2(u.hours) }))
     .sort((a, b) => b.hours - a.hours || b.total - a.total);
@@ -202,7 +212,10 @@ export function computeMetrics(
     .sort((a, b) => b.count - a.count);
 
   // ── Comparación mensual ──
-  const monthly = buildMonthly(createdInRange, resolvedInRange, entriesInRange);
+  const subtasksInRange = subtasksScoped.filter(
+    (t) => noRange || inRange(t.createdTs, start, end),
+  );
+  const monthly = buildMonthly(createdInRange, resolvedInRange, entriesInRange, subtasksInRange);
 
   // ── Tiempo promedio en cada estado (sobre el universo de la ventana) ──
   const tisMap = new Map<string, { status: string; type: string; total: number; count: number }>();
@@ -228,7 +241,8 @@ export function computeMetrics(
   // ── Totales ──
   const reopened = resolvedInRange.filter((t) => t.reopened).length;
   const totals = {
-    scopedTotal: scoped.length,
+    scopedTotal: topLevel.length,
+    subtasks: subtaskCount,
     created: createdInRange.length,
     open: openSnapshot.length,
     resolved: resolvedInRange.length,
@@ -258,20 +272,22 @@ function buildMonthly(
   createdInRange: EnrichedTask[],
   resolvedInRange: EnrichedTask[],
   entriesInRange: TimeEntry[],
+  subtasksInRange: EnrichedTask[],
 ): MonthlyBucket[] {
   const map = new Map<
     string,
-    { created: number; resolved: number; hours: number; mttr: number[]; mttd: number[] }
+    { created: number; resolved: number; hours: number; subtasks: number; mttr: number[]; mttd: number[] }
   >();
   const ensure = (k: string) => {
     let b = map.get(k);
     if (!b) {
-      b = { created: 0, resolved: 0, hours: 0, mttr: [], mttd: [] };
+      b = { created: 0, resolved: 0, hours: 0, subtasks: 0, mttr: [], mttd: [] };
       map.set(k, b);
     }
     return b;
   };
   for (const t of createdInRange) if (t.createdTs != null) ensure(monthKey(t.createdTs)).created += 1;
+  for (const t of subtasksInRange) if (t.createdTs != null) ensure(monthKey(t.createdTs)).subtasks += 1;
   for (const t of resolvedInRange) {
     if (t.resolvedTs == null) continue;
     const b = ensure(monthKey(t.resolvedTs));
@@ -289,6 +305,7 @@ function buildMonthly(
       created: b.created,
       resolved: b.resolved,
       hours: round2(b.hours),
+      subtasks: b.subtasks,
       mttrDays: b.mttr.length ? round2(avg(b.mttr)) : null,
       mttdDays: b.mttd.length ? round2(avg(b.mttd)) : null,
     }));

@@ -1,0 +1,32 @@
+# DinoCloud Internal - Confidential
+# Copiar a terraform.tfvars (gitignored) y completar. NO poner secretos aca:
+# CLICKUP_TOKEN y AUTH_SECRET se cargan por CLI en Secrets Manager (ver RUNBOOK).
+
+region       = "us-east-1"
+project_name = "msp-portal"
+environment  = "production"
+
+# Dominio. Dejar route53_zone_id="" para gestionar el DNS a mano.
+domain_name     = "portal.dinocloud.com"
+route53_zone_id = "" # Z0123456789ABCDEFGHIJ (hosted zone de dinocloud.com)
+
+# URL publica para auth (AUTH_URL + callback/logout de Cognito). Mientras no haya
+# dominio custom, poner la URL default de App Runner:
+#   terraform output apprunner_default_url
+app_base_url = "" # ej: https://xxxxx.us-east-1.awsapprunner.com
+
+# IDs del workspace ClickUp (NO secretos; especificos del workspace).
+clickup_config = {
+  CLICKUP_TEAM_ID            = ""
+  CLICKUP_SPACE_ID           = ""
+  CLICKUP_ACTIVE_FOLDER_IDS  = "" # csv de folder ids (MSP Latam + MSP US clients)
+  CLICKUP_REX_LIST_ID        = ""
+}
+
+# CI/CD (OIDC). El repo autorizado a deployar a prod.
+github_owner         = "aareco-sys"
+github_repo          = "MSP_web_portal"
+github_deploy_branch = "main"
+
+# Ventana de servicio L-V 9-20 ART (poner false para 24x7).
+enable_service_schedule = true

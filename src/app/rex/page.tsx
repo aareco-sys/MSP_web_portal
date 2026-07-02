@@ -93,7 +93,7 @@ export default function RexPage() {
       <div className="grid kpi-grid">
         <KpiCard label={t.rex.open} value={m.open} />
         <KpiCard label={t.rex.overdue} value={m.overdue} tone={m.overdue > 0 ? "amber" : "green"} />
-        <KpiCard label={t.rex.total} value={m.total} />
+        <KpiCard label={t.rex.total} value={m.total} hint={`${fmtNum(m.subtasks)} ${t.terms.subtasks.toLowerCase()}`} />
         <KpiCard label={t.rex.closed} value={m.closed} tone="green" />
       </div>
 

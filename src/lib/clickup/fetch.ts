@@ -59,6 +59,8 @@ interface RawTask {
   id: string;
   name: string;
   status?: { status?: string; type?: string };
+  /** id de la tarea padre (ClickUp lo expone en `parent` cuando es subtarea). */
+  parent?: string | null;
   date_created?: string;
   date_closed?: string;
   date_done?: string;
@@ -92,6 +94,7 @@ async function fetchTasksForList(
         listName: list.name,
         folderId: list.folderId,
         folderName: list.folderName,
+        parentId: t.parent ?? null,
         assignees: (t.assignees ?? []).map((a) => ({
           id: a.id,
           username: a.username ?? a.email ?? String(a.id),

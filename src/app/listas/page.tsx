@@ -3,15 +3,15 @@
 import { useMetrics } from "@/hooks/use-data";
 import { Loading, ErrorState, Empty } from "@/components/states";
 import { DataTable, type Column } from "@/components/data-table";
-import { BarCard, DonutCard } from "@/components/charts";
+import { BarCard, DonutCard, LineCard } from "@/components/charts";
 import { CHART, PALETTE, STATUS_TYPE_COLOR } from "@/components/ui";
 import { useT, useFormatters } from "@/lib/i18n/context";
-import type { ListMetrics } from "@/lib/metrics";
+import type { ListMetrics, MonthlyBucket } from "@/lib/metrics";
 
 export default function ListasPage() {
   const { data, isLoading, error } = useMetrics();
   const t = useT();
-  const { fmtNum, fmtDur } = useFormatters();
+  const { fmtNum, fmtDur, monthLabel } = useFormatters();
   if (isLoading) return <Loading />;
   if (error) return <ErrorState message={(error as Error).message} />;
   const m = data!.metrics;
@@ -34,6 +34,7 @@ export default function ListasPage() {
     { key: "created", header: t.terms.created, align: "right", render: (l) => fmtNum(l.created) },
     { key: "open", header: t.terms.open, align: "right", render: (l) => fmtNum(l.open) },
     { key: "resolved", header: t.terms.resolved, align: "right", render: (l) => fmtNum(l.resolved) },
+    { key: "subtasks", header: t.terms.subtasks, align: "right", render: (l) => fmtNum(l.subtasks) },
     { key: "hours", header: t.terms.hours, align: "right", render: (l) => fmtNum(l.hours, 1) },
     { key: "mttd", header: t.lists.mttdMed, align: "right", render: (l) => fmtDur(l.mttd.median) },
     { key: "mttr", header: t.lists.mttrMed, align: "right", render: (l) => fmtDur(l.mttr.median) },
@@ -77,6 +78,36 @@ export default function ListasPage() {
     .sort((a, b) => b.hours - a.hours)
     .slice(0, 12)
     .map((l) => ({ listName: l.listName, hours: l.hours }));
+
+  // Horas trackeadas por mes (respeta los filtros vía useMetrics → m.monthly).
+  // Tendencia: regresión lineal por mínimos cuadrados sobre las horas.
+  const monthsHours = m.monthly;
+  const n = monthsHours.length;
+  let trendAt: (i: number) => number | null = () => null;
+  if (n >= 2) {
+    const sx = monthsHours.reduce((s, _r, i) => s + i, 0);
+    const sy = monthsHours.reduce((s, r) => s + r.hours, 0);
+    const sxx = monthsHours.reduce((s, _r, i) => s + i * i, 0);
+    const sxy = monthsHours.reduce((s, r, i) => s + i * r.hours, 0);
+    const denom = n * sxx - sx * sx;
+    const slope = denom !== 0 ? (n * sxy - sx * sy) / denom : 0;
+    const intercept = (sy - slope * sx) / n;
+    trendAt = (i) => Math.round((intercept + slope * i) * 10) / 10;
+  }
+  const hoursMonthlyChart = monthsHours.map((r, i) => ({
+    label: monthLabel(r.month),
+    hours: r.hours,
+    trend: trendAt(i),
+  })) as unknown as Record<string, unknown>[];
+
+  const hoursByMonthColumns: Column<MonthlyBucket>[] = [
+    {
+      key: "month",
+      header: t.terms.month,
+      render: (r) => <span className="font-semibold">{monthLabel(r.month)}</span>,
+    },
+    { key: "hours", header: t.terms.hours, align: "right", render: (r) => fmtNum(r.hours, 1) },
+  ];
 
   return (
     <>
@@ -135,6 +166,19 @@ export default function ListasPage() {
       />
 
       <DataTable title={t.lists.detail} columns={columns} rows={m.byList} />
+
+      <LineCard
+        title={t.monthly.hoursByMonth}
+        data={hoursMonthlyChart}
+        xKey="label"
+        lines={[
+          { key: "hours", name: t.terms.hours, color: CHART.hours },
+          { key: "trend", name: t.terms.trend, color: "#9aa0ad", dashed: true },
+        ]}
+        height={300}
+      />
+
+      <DataTable columns={hoursByMonthColumns} rows={m.monthly} />
     </>
   );
 }

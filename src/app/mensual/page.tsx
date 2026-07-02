@@ -61,6 +61,7 @@ export default function MensualPage() {
     { key: "cd", header: t.monthly.delta, align: "right", render: (r) => <Delta value={r.createdDelta} fmt={(n) => fmtNum(n)} /> },
     { key: "resolved", header: t.terms.resolved, align: "right", render: (r) => fmtNum(r.resolved) },
     { key: "rd", header: t.monthly.delta, align: "right", render: (r) => <Delta value={r.resolvedDelta} fmt={(n) => fmtNum(n)} /> },
+    { key: "subtasks", header: t.terms.subtasks, align: "right", render: (r) => fmtNum(r.subtasks) },
     { key: "hours", header: t.terms.hours, align: "right", render: (r) => fmtNum(r.hours, 1) },
     { key: "hd", header: t.monthly.delta, align: "right", render: (r) => <Delta value={r.hoursDelta} fmt={(n) => fmtNum(n, 1)} /> },
     { key: "mttr", header: "MTTR", align: "right", render: (r) => fmtDur(r.mttrDays) },

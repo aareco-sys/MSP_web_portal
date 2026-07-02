@@ -44,6 +44,7 @@ export default function UsuariosPage() {
         ),
     },
     { key: "total", header: t.terms.tasks, align: "right", render: (u) => fmtNum(u.total) },
+    { key: "subtasks", header: t.terms.subtasks, align: "right", render: (u) => fmtNum(u.subtasks) },
     { key: "open", header: t.terms.open, align: "right", render: (u) => fmtNum(u.open) },
     { key: "resolved", header: t.terms.resolved, align: "right", render: (u) => fmtNum(u.resolved) },
     {

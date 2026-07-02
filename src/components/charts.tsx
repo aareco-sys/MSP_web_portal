@@ -45,6 +45,8 @@ interface Series {
   key: string;
   name: string;
   color?: string;
+  /** Línea punteada y sutil (p.ej. tendencia); sin dots ni entrada de leyenda. */
+  dashed?: boolean;
 }
 
 export function BarCard({
@@ -202,9 +204,12 @@ export function LineCard({
                   dataKey={l.key}
                   name={l.name}
                   stroke={l.color ?? PALETTE[i % PALETTE.length]}
-                  strokeWidth={2.5}
+                  strokeWidth={l.dashed ? 1.5 : 2.5}
+                  strokeDasharray={l.dashed ? "5 5" : undefined}
+                  strokeOpacity={l.dashed ? 0.55 : 1}
                   dot={false}
-                  activeDot={{ r: 5 }}
+                  activeDot={l.dashed ? false : { r: 5 }}
+                  legendType={l.dashed ? "none" : "circle"}
                   connectNulls
                 />
               ))}

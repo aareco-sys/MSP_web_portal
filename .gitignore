@@ -43,3 +43,18 @@ next-env.d.ts
 
 # Design handoff (referencia de diseño, no código de la app)
 design_handoff_msp_portal_redesign/
+
+# Terraform — estado, tfvars (pueden contener config sensible) y artefactos.
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+infra/terraform/.build/
+
+# Terraform saved plans (pueden contener valores sensibles) y patches sueltos
+tfplan
+*.tfplan
+*.patch
