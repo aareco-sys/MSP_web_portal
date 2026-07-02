@@ -19,7 +19,8 @@ Si una validación falla (**❌**), **parar** y resolver antes de continuar — 
 
 - [ ] Plan y presupuesto (~USD 8–10/mes) aprobados por el Director de Ingeniería.
 - [ ] Cuenta AWS + región (`us-east-1`) confirmadas.
-- [ ] Subdominio `portal.dinocloud.com` y su hosted zone disponibles.
+- [ ] Dominio: se sirve en **`mspportal.lab.dinocloud.co`** (subdominio de la hosted zone
+      `lab.dinocloud.co`, que ya está en esta cuenta → Terraform gestiona el DNS con `route53_zone_id`).
 - [ ] Lista inicial de usuarios (emails `@dinocloud.com`) para Cognito.
 - [ ] `CLICKUP_TOKEN` (`pk_...`) a mano — **nunca** se commitea; va a Secrets Manager.
 
@@ -202,7 +203,7 @@ aws secretsmanager put-secret-value \
   --secret-string "$CLICKUP_TOKEN"
 unset CLICKUP_TOKEN
 
-# AUTH_SECRET (para Fase 2 / Auth.js). Generar aleatorio:
+# AUTH_SECRET: firma la cookie de sesión de la auth (OIDC/Cognito). Generar aleatorio:
 aws secretsmanager put-secret-value \
   --secret-id msp-portal/auth-secret \
   --secret-string "$(openssl rand -base64 32)"
@@ -277,9 +278,15 @@ confirmá el Paso 5 — o falta de permiso del instance role a Secrets Manager).
 
 ---
 
-## Paso 7 — Dominio `portal.dinocloud.com` `[APROBACIÓN]`
+## Paso 7 — Dominio `mspportal.lab.dinocloud.co` `[APROBACIÓN]`
 
-Si seteaste `route53_zone_id`, el Paso 6 ya creó los registros de validación y el CNAME.
+Con `route53_zone_id` seteado (zona `lab.dinocloud.co`, en esta cuenta), el Paso 6 crea
+solo los registros de validación ACM + el CNAME de tráfico → el cert valida solo.
+
+> ⚠️ Gotcha: la custom domain association emite los registros de validación **después**
+> de crearse, así que el `for_each` de `dns.tf` no los conoce en el primer `plan`. Si el
+> apply falla con *"Invalid for_each argument"*, aplicá en 2 pasos:
+> `terraform apply -target=aws_apprunner_custom_domain_association.portal` y luego `terraform apply`.
 
 **✅ Validar:**
 
@@ -287,15 +294,18 @@ Si seteaste `route53_zone_id`, el Paso 6 ya creó los registros de validación y
 SVC=$(terraform output -raw apprunner_service_arn)
 aws apprunner describe-custom-domains --service-arn "$SVC" \
   --query 'CustomDomains[].Status'      # "active" cuando valida el cert (puede tardar)
-dig +short portal.dinocloud.com
-curl -s https://portal.dinocloud.com/api/health
+dig +short mspportal.lab.dinocloud.co
+curl -s https://mspportal.lab.dinocloud.co/api/health
 ```
 
 `active` + el dominio resuelve + `/api/health` OK por HTTPS.
 
-**❌ / DNS a mano** (si `route53_zone_id=""`): tomá los registros de
-`terraform output custom_domain_validation_records` y `custom_domain_dns_target`,
-cargálos en el DNS de `dinocloud.com`, y re-validá.
+**Cutover:** setear `app_base_url = "https://mspportal.lab.dinocloud.co"` en `terraform.tfvars`
++ `terraform apply` (actualiza `AUTH_URL` y las callback de Cognito; redeploy sin rebuild).
+
+**DNS en otra cuenta** (si la zona no estuviera en esta cuenta, `route53_zone_id=""`):
+tomá `terraform output custom_domain_validation_records` + `custom_domain_dns_target` y
+cargálos a mano donde viva el DNS.
 
 ---
 
@@ -317,17 +327,22 @@ resume hace el fetch en frío (~15–20 s); la Lambda `msp-portal-warmup` (08:55
 mitiga. **❌** Si la Lambda falla, mirá sus logs en CloudWatch
 (`/aws/lambda/msp-portal-warmup`).
 
-> ℹ️ **Caveat Fase 2:** cuando se active la auth (Auth.js), las rutas `/api/metrics`
-> y `/api/rex` quedarán protegidas y el warm-up recibirá 401. Habrá que exponer un
-> token interno de warm-up o un endpoint dedicado. Hasta entonces el warm-up funciona.
+> ℹ️ **Warm-up con auth (resuelto):** con la auth activa, `/api/metrics` y `/api/rex`
+> están protegidas, así que la Lambda de warm-up manda un header `x-warmup-token`
+> (secreto compartido, `random_password.warmup`) que el `proxy.ts` deja pasar. Ya funciona
+> con la auth puesta.
 
 ---
 
 ## Paso 9 — Conectar CI/CD (GitHub Actions → AWS por OIDC)
 
 El workflow [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) hace
-build → push ECR → `start-deployment` → healthcheck, con **gate de aprobación** del
-environment `production`.
+build → push ECR → (auto-deploy de App Runner) → espera RUNNING → healthcheck, con
+**gate de aprobación** del environment `production`.
+
+> Como App Runner tiene `auto_deployments_enabled=true`, el push de `:latest` YA dispara
+> el deploy. El workflow **no** llama `start-deployment` (chocaría con el auto-deploy:
+> *"isn't in RUNNING state"*); solo espera a que quede RUNNING.
 
 **Acción (en GitHub, repo `aareco-sys/MSP_web_portal`):**
 
@@ -349,8 +364,11 @@ environment `production`.
   healthcheck en verde.
 - `aws apprunner list-operations --service-arn "$SVC"` muestra el deployment disparado por CI.
 
-**❌** Si `configure-aws-credentials` falla con `Not authorized to perform sts:AssumeRoleWithWebIdentity`,
-revisá que el `sub` del rol OIDC (`iam.tf`) coincida con `repo:aareco-sys/MSP_web_portal:ref:refs/heads/main`.
+**❌** Si `configure-aws-credentials` falla con `Not authorized to perform sts:AssumeRoleWithWebIdentity`:
+el job de deploy corre en el environment `production`, así que GitHub emite el `sub` OIDC como
+`repo:aareco-sys/MSP_web_portal:environment:production` (NO el de branch). La trust del rol
+(`iam.tf`) acepta **ambos** (`:environment:production` y `:ref:refs/heads/main`); si tocás el
+nombre del environment o del repo, actualizá esos `sub`.
 
 ---
 
@@ -359,11 +377,11 @@ revisá que el `sub` del rol OIDC (`iam.tf`) coincida con `repo:aareco-sys/MSP_w
 ### Rollback (sin migraciones — app stateless)
 
 ```bash
-# Redeploy del SHA anterior: re-tagear esa imagen como :latest y disparar deploy.
+# Redeploy del SHA anterior: re-tagear esa imagen como :latest y pushear.
+# Con auto_deployments_enabled=true, el push de :latest dispara el deploy solo.
 docker pull "$REGISTRY/msp-portal:<sha-anterior>"
 docker tag  "$REGISTRY/msp-portal:<sha-anterior>" "$REGISTRY/msp-portal:latest"
 docker push "$REGISTRY/msp-portal:latest"
-aws apprunner start-deployment --service-arn "$SVC"
 ```
 
 ### Rotar `CLICKUP_TOKEN`
@@ -391,12 +409,12 @@ aws apprunner resume-service --service-arn "$SVC"   # <2 min; se vuelve a pausar
 
 ## Estado de las fases (ver plan §8)
 
-- [x] **Fase 1 — Infra base (IaC):** este runbook (Pasos 1–8).
-- [ ] **Fase 2 — Auth en la app (código):** integrar Auth.js (NextAuth v5) + Cognito +
-      middleware. **Fuera de esta entrega** (es código Next.js). La infra de Cognito ya
-      está lista; falta el código y resolver el warm-up con auth (Paso 8 caveat).
-- [x] **Fase 3 — CI/CD:** workflow `deploy.yml` (Paso 9).
+- [x] **Fase 1 — Infra base (IaC):** Pasos 1–8.
+- [x] **Fase 2 — Auth en la app:** OIDC propio contra Cognito Hosted UI (PKCE + sesión
+      firmada) + `src/proxy.ts` que protege todas las rutas + MFA. Warm-up resuelto con
+      `x-warmup-token`. (Ver `src/lib/auth/`.)
+- [x] **Fase 3 — CI/CD:** `deploy.yml` (Paso 9); deploy por push/PR a `main` + gate `production`.
 - [ ] **Fase 4 — Observabilidad + handoff:** CloudWatch dashboard + alarmas (5xx, health,
-      memoria) + SNS. Pendiente.
+      memoria) + SNS. **Pendiente.**
 
 > **DinoCloud Internal - Confidential** · No distribuir fuera de la organización.

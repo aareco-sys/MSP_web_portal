@@ -5,6 +5,15 @@
 > Estado: **Borrador para aprobación** · Fecha: 2026-06-10
 > Regla: el deploy a infraestructura productiva **se detiene para aprobación humana explícita** antes de ejecutarse.
 
+> ✅ **Estado: IMPLEMENTADO.** Este documento es el plan original (histórico). Lo que realmente
+> se desplegó, con estos **deltas**:
+> - **Dominio:** `mspportal.lab.dinocloud.co` (subdominio de la zona `lab.dinocloud.co`, ya
+>   delegada en esta cuenta → DNS gestionado por Terraform), **no** `portal.dinocloud.com`.
+> - **Auth:** OIDC propio contra Cognito Hosted UI (PKCE + sesión firmada) en vez de NextAuth v5;
+>   el resultado es el mismo (Cognito + MFA, `proxy.ts` protege todo).
+> - **Auto-deploy:** el deploy por CI **no** llama `start-deployment` (App Runner auto-deploya el `:latest`).
+> - Estado operativo y procedimiento vigentes: ver [`../README.md`](../README.md) y [`RUNBOOK.md`](./RUNBOOK.md).
+
 ---
 
 ## 1. Resumen ejecutivo
