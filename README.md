@@ -94,6 +94,7 @@ Manager** (nunca en el repo).
 **Deploy por CI/CD** (GitHub Actions + OIDC, sin access keys): push/PR a `main` → aprobación
 del environment `production` → build → push a ECR → deploy en App Runner. No requiere build local.
 
+- **Diagrama de arquitectura:** [`docs/architecture.md`](docs/architecture.md)
 - **Plan / arquitectura / costos:** [`docs/aws-deployment-plan.md`](docs/aws-deployment-plan.md)
 - **IaC (Terraform):** [`infra/terraform/`](infra/terraform/)
 - **Procedimiento paso a paso con validaciones:** [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
