@@ -25,6 +25,11 @@ export default function UsuariosPage() {
   const maxHours = Math.max(1, ...m.byUser.map((u) => u.hours));
   const top = m.byUser.slice(0, 15);
 
+  // Capacidad del rango (160 h/mes prorrateadas); null si no hay rango de fechas.
+  const cap = m.meta.capacityHours;
+  const assignedPct = (u: UserMetrics) => (cap ? (u.hours / cap) * 100 : null);
+  const pctCell = (v: number | null) => (v == null ? "—" : `${fmtNum(v, 0)}%`);
+
   const columns: Column<UserMetrics>[] = [
     {
       key: "user",
@@ -45,6 +50,7 @@ export default function UsuariosPage() {
     },
     { key: "total", header: t.terms.tasks, align: "right", render: (u) => fmtNum(u.total) },
     { key: "subtasks", header: t.terms.subtasks, align: "right", render: (u) => fmtNum(u.subtasks) },
+    { key: "projects", header: t.users.projects, align: "right", render: (u) => fmtNum(u.projects) },
     { key: "open", header: t.terms.open, align: "right", render: (u) => fmtNum(u.open) },
     { key: "resolved", header: t.terms.resolved, align: "right", render: (u) => fmtNum(u.resolved) },
     {
@@ -57,6 +63,16 @@ export default function UsuariosPage() {
           {fmtNum(u.hours, 1)}
         </span>
       ),
+    },
+    { key: "assigned", header: t.users.assignedPct, align: "right", render: (u) => pctCell(assignedPct(u)) },
+    {
+      key: "available",
+      header: t.users.availablePct,
+      align: "right",
+      render: (u) => {
+        const p = assignedPct(u);
+        return pctCell(p == null ? null : Math.max(0, 100 - p));
+      },
     },
   ];
 
@@ -86,6 +102,9 @@ export default function UsuariosPage() {
         />
       </div>
 
+      <p style={{ fontSize: 13, color: "var(--color-fg-subtle)", margin: "4px 2px 0" }}>
+        {t.users.capacityHint(cap != null ? fmtNum(cap, 0) : "—")}
+      </p>
       <DataTable title={t.users.detail} columns={columns} rows={m.byUser} />
     </>
   );

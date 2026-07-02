@@ -117,7 +117,12 @@ const es = {
     hoursByUser: "Horas registradas por ingeniero",
     loadByUser: "Carga de tareas por ingeniero",
     detail: "Detalle por ingeniero",
-    avgHint: "Horas por persona aproximadas — repartidas entre asignados.",
+    avgHint: "Horas exactas según quién imputó (no repartidas entre asignados).",
+    projects: "Proyectos",
+    assignedPct: "% asignado",
+    availablePct: "% disponib.",
+    capacityHint: (cap: string) =>
+      `% asignado/disponibilidad sobre 160 h/mes prorrateadas al rango (capacidad: ${cap} h). Sin rango de fechas → “—”.`,
   },
   monthly: {
     title: "Comparación mensual",
@@ -320,7 +325,12 @@ const en: Messages = {
     hoursByUser: "Hours tracked by engineer",
     loadByUser: "Task load by engineer",
     detail: "Engineer detail",
-    avgHint: "Per-person hours are approximate — split across assignees.",
+    avgHint: "Exact hours by who logged them (not split across assignees).",
+    projects: "Projects",
+    assignedPct: "% assigned",
+    availablePct: "% avail.",
+    capacityHint: (cap: string) =>
+      `% assigned/available over 160 h/month prorated to the range (capacity: ${cap} h). No date range → “—”.`,
   },
   monthly: {
     title: "Monthly comparison",

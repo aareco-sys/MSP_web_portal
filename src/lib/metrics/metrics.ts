@@ -174,7 +174,7 @@ export function computeMetrics(
   const ensureUser = (id: number, username: string, email: string) => {
     let u = userMap.get(id);
     if (!u) {
-      u = { userId: id, username, email, total: 0, open: 0, resolved: 0, hours: 0, subtasks: 0 };
+      u = { userId: id, username, email, total: 0, open: 0, resolved: 0, hours: 0, subtasks: 0, projects: 0 };
       userMap.set(id, u);
     }
     return u;
@@ -183,14 +183,28 @@ export function computeMetrics(
     if (t.assignees.length === 0) fn(ensureUser(UNASSIGNED_ID, UNASSIGNED_NAME, ""));
     else for (const a of t.assignees) fn(ensureUser(a.id, a.username, a.email));
   };
-  for (const t of windowTasks) eachAssignee(t, (u) => (u.total += 1));
+  // Proyectos (listas) por usuario: tareas asignadas ∪ listas con horas cargadas.
+  const userProjects = new Map<number, Set<string>>();
+  const addProject = (id: number, listId: string | null) => {
+    if (!listId) return;
+    let s = userProjects.get(id);
+    if (!s) userProjects.set(id, (s = new Set()));
+    s.add(listId);
+  };
+  for (const t of windowTasks)
+    eachAssignee(t, (u) => {
+      u.total += 1;
+      addProject(u.userId, t.listId);
+    });
   for (const t of openSnapshot) eachAssignee(t, (u) => (u.open += 1));
   for (const t of resolvedInRange) eachAssignee(t, (u) => (u.resolved += 1));
-  for (const e of entriesInRange)
+  for (const e of entriesInRange) {
     ensureUser(e.userId, e.username, e.email).hours += msToHours(e.durationMs);
+    addProject(e.userId, e.listId);
+  }
   for (const t of subtasksScoped) eachAssignee(t, (u) => (u.subtasks += 1));
   const byUser = [...userMap.values()]
-    .map((u) => ({ ...u, hours: round2(u.hours) }))
+    .map((u) => ({ ...u, hours: round2(u.hours), projects: userProjects.get(u.userId)?.size ?? 0 }))
     .sort((a, b) => b.hours - a.hours || b.total - a.total);
 
   // ── Por estado / prioridad (sobre el universo de la ventana) ──
@@ -264,9 +278,22 @@ export function computeMetrics(
     byPriority,
     monthly,
     avgTimeInStatus,
-    meta: { fetchedAt: dataset.fetchedAt, timeRange: dataset.timeRange, filters },
+    meta: {
+      fetchedAt: dataset.fetchedAt,
+      timeRange: dataset.timeRange,
+      filters,
+      // Capacidad del rango: 160 h/mes prorrateadas por la duración del rango.
+      capacityHours:
+        start != null && end != null
+          ? round2(HOURS_PER_MONTH * ((end - start) / MS_PER_MONTH))
+          : null,
+    },
   };
 }
+
+/** Capacidad mensual por ingeniero (base para % de disponibilidad). Override: MSP_HOURS_PER_MONTH. */
+const HOURS_PER_MONTH = Number(process.env.MSP_HOURS_PER_MONTH ?? "160");
+const MS_PER_MONTH = 30.4375 * 86_400_000; // mes promedio
 
 function buildMonthly(
   createdInRange: EnrichedTask[],

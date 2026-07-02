@@ -44,6 +44,8 @@ export interface UserMetrics {
   hours: number;
   /** subtareas asignadas al ingeniero en scope (solo desglose). */
   subtasks: number;
+  /** cantidad de clientes/listas donde trabaja (tareas asignadas ∪ horas cargadas). */
+  projects: number;
 }
 
 export interface MonthlyBucket {
@@ -89,5 +91,7 @@ export interface MetricsResult {
     fetchedAt: number;
     timeRange: { start: number; end: number };
     filters: MetricsFilters;
+    /** capacidad del rango (160 h/mes prorrateadas). null si no hay rango de fechas. */
+    capacityHours: number | null;
   };
 }

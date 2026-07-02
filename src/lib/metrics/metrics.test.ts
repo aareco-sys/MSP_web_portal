@@ -188,8 +188,14 @@ describe("computeMetrics (sin rango)", () => {
     const sin = r.byUser.find((u) => u.userId === 0)!;
     expect(ana.hours).toBe(6); // e1 + e3 + e4
     expect(ana.resolved).toBe(4);
+    expect(ana.projects).toBe(2); // LA (tareas) + LB (horas e3)
     expect(beto.hours).toBe(5);
+    expect(beto.projects).toBe(1); // LB
     expect(sin.open).toBe(1); // t4 sin asignar
+  });
+
+  it("sin rango no hay capacidad (base mensual no aplica)", () => {
+    expect(r.meta.capacityHours).toBeNull();
   });
 
   it("mensual", () => {
@@ -226,6 +232,13 @@ describe("computeMetrics (rango = febrero) — ventana de reporte + bug fix", ()
 
   it("horas = imputaciones con fecha en febrero", () => {
     expect(r.totals.hours).toBe(8); // e2 (3/2) + e4 (12/2)
+  });
+
+  it("capacidad prorrateada por el rango (~160 h/mes)", () => {
+    // Febrero ≈ 28 días → ~147 h (160 × 28/30.44).
+    expect(r.meta.capacityHours).not.toBeNull();
+    expect(r.meta.capacityHours!).toBeGreaterThan(140);
+    expect(r.meta.capacityHours!).toBeLessThan(155);
   });
 });
 
