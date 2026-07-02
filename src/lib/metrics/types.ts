@@ -59,8 +59,10 @@ export interface StatusCount {
 
 export interface MetricsResult {
   totals: {
-    /** total de tareas en scope (sin filtro de fecha) — para empty-state/contexto. */
+    /** tareas de nivel superior en scope (sin filtro de fecha) — para empty-state/contexto. */
     scopedTotal: number;
+    /** subtareas en scope (excluidas de los conteos; sus horas sí cuentan). */
+    subtasks: number;
     created: number; // creadas en el rango
     open: number; // backlog al final del rango (foto)
     resolved: number; // resueltas en el rango (throughput)

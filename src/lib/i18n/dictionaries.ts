@@ -78,6 +78,7 @@ const es = {
     unassigned: "Sin asignar",
     days: "días",
     trend: "Tendencia",
+    subtasks: "Subtareas",
   },
   overview: {
     title: "Overview",
@@ -280,6 +281,7 @@ const en: Messages = {
     unassigned: "Unassigned",
     days: "days",
     trend: "Trend",
+    subtasks: "Subtasks",
   },
   overview: {
     title: "Overview",

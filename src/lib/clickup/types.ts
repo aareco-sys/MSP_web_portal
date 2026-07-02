@@ -27,6 +27,8 @@ export interface Task {
   listName: string;
   folderId: string;
   folderName: string;
+  /** id de la tarea padre si es subtarea; null si es tarea de nivel superior. */
+  parentId: string | null;
   assignees: Assignee[];
   tags: string[];
   priority: string | null;

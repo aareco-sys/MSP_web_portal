@@ -31,6 +31,8 @@ export interface EnrichedTask extends Task {
   /** estado actual: resuelta o abierta (según statusType). */
   isResolved: boolean;
   isUnassigned: boolean;
+  /** true si es subtarea (tiene parentId). No cuenta como ticket en los conteos. */
+  isSubtask: boolean;
 }
 
 const isResolvedType = (t: string) => t === "done" || t === "closed";
@@ -87,6 +89,7 @@ export function enrichTask(
     reopened,
     isResolved: isResolvedType(task.statusType),
     isUnassigned: task.assignees.length === 0,
+    isSubtask: task.parentId != null,
   };
 }
 

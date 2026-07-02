@@ -5,6 +5,7 @@ import {
   CircleCheck,
   Gauge,
   Inbox,
+  ListTree,
   RotateCcw,
   SquarePlus,
   Timer,
@@ -50,6 +51,13 @@ export default function OverviewPage() {
   return (
     <>
       <div className="grid kpi-grid">
+        <KpiCard
+          label={t.terms.tasks}
+          value={m.totals.scopedTotal}
+          icon={<ListTree />}
+          tone="slate"
+          hint={`${fmtNum(m.totals.subtasks)} ${t.terms.subtasks.toLowerCase()}`}
+        />
         <KpiCard label={t.overview.createdRange} value={m.totals.created} icon={<SquarePlus />} tone="green" />
         <KpiCard
           label={t.overview.openBacklog}

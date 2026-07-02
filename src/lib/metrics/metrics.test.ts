@@ -20,6 +20,7 @@ function task(over: Partial<Task> & Pick<Task, "id" | "listId">): Task {
     listName: over.listName ?? over.listId,
     folderId: over.folderId ?? "F1",
     folderName: over.folderName ?? "Folder Latam",
+    parentId: over.parentId ?? null,
     assignees: over.assignees ?? [],
     tags: over.tags ?? [],
     priority: over.priority ?? null,
@@ -225,6 +226,39 @@ describe("computeMetrics (rango = febrero) — ventana de reporte + bug fix", ()
 
   it("horas = imputaciones con fecha en febrero", () => {
     expect(r.totals.hours).toBe(8); // e2 (3/2) + e4 (12/2)
+  });
+});
+
+describe("computeMetrics (subtareas: no cuentan como tickets, pero sus horas sí)", () => {
+  // 1 tarea padre + 1 subtarea, ambas resueltas, cada una con horas imputadas.
+  const subDataset: ClickUpDataset = {
+    lists: [{ id: "LA", name: "LA", folderId: "F1", folderName: "Folder Latam" }],
+    tasks: [
+      task({ id: "p1", listId: "LA", assignees: [u1], dateCreated: ms("2026-01-01T00:00:00Z"), dateClosed: ms("2026-01-02T00:00:00Z") }),
+      task({ id: "s1", listId: "LA", parentId: "p1", assignees: [u1], dateCreated: ms("2026-01-01T00:00:00Z"), dateClosed: ms("2026-01-02T00:00:00Z") }),
+    ],
+    timeEntries: [
+      entry({ id: "ep", taskId: "p1", listId: "LA", userId: 1, start: ms("2026-01-01T10:00:00Z"), durationMs: 2 * H }),
+      entry({ id: "es", taskId: "s1", listId: "LA", userId: 1, start: ms("2026-01-01T12:00:00Z"), durationMs: 3 * H }),
+    ],
+    statusHistory: {},
+    fetchedAt: ms("2026-06-01T00:00:00Z"),
+    timeRange: { start: ms("2025-06-01T00:00:00Z"), end: ms("2026-06-01T00:00:00Z") },
+  };
+  const r = computeMetrics(subDataset);
+
+  it("la subtarea NO infla los conteos", () => {
+    expect(r.totals.scopedTotal).toBe(1); // solo la tarea padre
+    expect(r.totals.subtasks).toBe(1); // la subtarea, contada aparte
+    expect(r.totals.created).toBe(1);
+    expect(r.totals.resolved).toBe(1); // solo p1
+    expect(r.byList.find((l) => l.listId === "LA")!.resolved).toBe(1);
+  });
+
+  it("las horas SÍ incluyen las de la subtarea", () => {
+    expect(r.totals.hours).toBe(5); // ep (2) + es (3)
+    expect(r.byList.find((l) => l.listId === "LA")!.hours).toBe(5);
+    expect(r.byUser.find((u) => u.userId === 1)!.hours).toBe(5);
   });
 });
 

@@ -69,14 +69,19 @@ export function computeMetrics(
   const enriched = enrichTasks(dataset.tasks, dataset.statusHistory);
   const scoped = enriched.filter((t) => taskMatchesScope(t, filters));
 
-  // Subconjuntos por-métrica.
-  const createdInRange = scoped.filter(
+  // Las SUBTAREAS no son tickets: se excluyen de todos los CONTEOS. Sus horas
+  // sí cuentan, porque salen de los time entries por tarea (no de esta lista).
+  const topLevel = scoped.filter((t) => !t.isSubtask);
+  const subtaskCount = scoped.length - topLevel.length;
+
+  // Subconjuntos por-métrica (solo tareas de nivel superior).
+  const createdInRange = topLevel.filter(
     (t) => noRange || inRange(t.createdTs, start, end),
   );
-  const resolvedInRange = scoped.filter(
+  const resolvedInRange = topLevel.filter(
     (t) => t.resolvedTs != null && (noRange || inRange(t.resolvedTs, start, end)),
   );
-  const openSnapshot = scoped.filter((t) => openAsOf(t, boundary));
+  const openSnapshot = topLevel.filter((t) => openAsOf(t, boundary));
 
   // Universo "relevante a la ventana": unión de los tres (para estados/prioridad).
   const windowMap = new Map<string, EnrichedTask>();
@@ -228,7 +233,8 @@ export function computeMetrics(
   // ── Totales ──
   const reopened = resolvedInRange.filter((t) => t.reopened).length;
   const totals = {
-    scopedTotal: scoped.length,
+    scopedTotal: topLevel.length,
+    subtasks: subtaskCount,
     created: createdInRange.length,
     open: openSnapshot.length,
     resolved: resolvedInRange.length,
