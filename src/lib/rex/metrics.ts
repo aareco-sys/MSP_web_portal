@@ -46,6 +46,8 @@ export interface Slice {
 
 export interface RexMetrics {
   total: number;
+  /** subtareas (excluidas de los conteos; solo desglose). */
+  subtasks: number;
   open: number;
   closed: number;
   done: number;
@@ -108,6 +110,11 @@ export function computeRexMetrics(
       ? { start: range.start, end: range.end }
       : defaultRexRange(now);
 
+  // Las subtareas NO cuentan como tickets: los conteos van solo sobre tareas de
+  // nivel superior (parent == null). El detalle "in progress" sí las anida.
+  const topLevel = tasks.filter((t) => t.parent == null);
+  const subtasksCount = tasks.length - topLevel.length;
+
   const statusCounts = new Map<string, number>();
   const priorityCounts = new Map<string, number>();
   const openAssignee = new Map<string, number>();
@@ -119,7 +126,7 @@ export function computeRexMetrics(
   let completed = 0;
   const completedList: { name: string; assignee: string }[] = [];
 
-  for (const t of tasks) {
+  for (const t of topLevel) {
     const status = t.status.toLowerCase();
     statusCounts.set(status, (statusCounts.get(status) ?? 0) + 1);
 
@@ -166,10 +173,8 @@ export function computeRexMetrics(
       childrenByParent.set(t.parent, arr);
     }
   }
-  const ipIds = new Set(tasks.filter((t) => t.status === IN_PROGRESS).map((t) => t.id));
-  const inProgress: InProgressTask[] = tasks
-    // tareas in progress que no estén anidadas bajo otra in progress (evita duplicar)
-    .filter((t) => t.status === IN_PROGRESS && !(t.parent && ipIds.has(t.parent)))
+  const inProgress: InProgressTask[] = topLevel
+    .filter((t) => t.status === IN_PROGRESS)
     .map((t) => ({
       id: t.id,
       name: t.name,
@@ -185,7 +190,7 @@ export function computeRexMetrics(
       })),
     }));
 
-  const total = tasks.length;
+  const total = topLevel.length;
   const byStatus: Slice[] = [...statusCounts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([key, count]) => ({
@@ -210,6 +215,7 @@ export function computeRexMetrics(
 
   return {
     total,
+    subtasks: subtasksCount,
     open: total - closed,
     closed,
     done,

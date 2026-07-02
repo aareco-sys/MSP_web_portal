@@ -23,6 +23,8 @@ export interface ListMetrics {
   open: number; // backlog al final del rango (foto)
   resolved: number; // resueltas en el rango (throughput)
   unassigned: number; // abiertas sin asignar (foto)
+  /** subtareas del cliente en scope (no cuentan como tickets; solo desglose). */
+  subtasks: number;
   statusCounts: Record<string, number>;
   /** conteo por tipo de estado de ClickUp (para la barra apilada por cliente). */
   statusByType: { open: number; custom: number; done: number; closed: number };
@@ -40,6 +42,8 @@ export interface UserMetrics {
   open: number;
   resolved: number;
   hours: number;
+  /** subtareas asignadas al ingeniero en scope (solo desglose). */
+  subtasks: number;
 }
 
 export interface MonthlyBucket {
@@ -49,6 +53,8 @@ export interface MonthlyBucket {
   hours: number;
   mttrDays: number | null; // media del mes
   mttdDays: number | null;
+  /** subtareas creadas en el mes (solo desglose; no cuentan como tickets). */
+  subtasks: number;
 }
 
 export interface StatusCount {

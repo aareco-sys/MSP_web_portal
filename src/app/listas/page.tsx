@@ -34,6 +34,7 @@ export default function ListasPage() {
     { key: "created", header: t.terms.created, align: "right", render: (l) => fmtNum(l.created) },
     { key: "open", header: t.terms.open, align: "right", render: (l) => fmtNum(l.open) },
     { key: "resolved", header: t.terms.resolved, align: "right", render: (l) => fmtNum(l.resolved) },
+    { key: "subtasks", header: t.terms.subtasks, align: "right", render: (l) => fmtNum(l.subtasks) },
     { key: "hours", header: t.terms.hours, align: "right", render: (l) => fmtNum(l.hours, 1) },
     { key: "mttd", header: t.lists.mttdMed, align: "right", render: (l) => fmtDur(l.mttd.median) },
     { key: "mttr", header: t.lists.mttrMed, align: "right", render: (l) => fmtDur(l.mttr.median) },

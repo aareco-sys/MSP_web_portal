@@ -252,7 +252,10 @@ describe("computeMetrics (subtareas: no cuentan como tickets, pero sus horas sí
     expect(r.totals.subtasks).toBe(1); // la subtarea, contada aparte
     expect(r.totals.created).toBe(1);
     expect(r.totals.resolved).toBe(1); // solo p1
-    expect(r.byList.find((l) => l.listId === "LA")!.resolved).toBe(1);
+    const la = r.byList.find((l) => l.listId === "LA")!;
+    expect(la.resolved).toBe(1);
+    expect(la.subtasks).toBe(1); // desglose por cliente
+    expect(r.byUser.find((u) => u.userId === 1)!.subtasks).toBe(1); // desglose por ingeniero
   });
 
   it("las horas SÍ incluyen las de la subtarea", () => {
