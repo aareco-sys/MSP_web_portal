@@ -34,6 +34,16 @@ export const MS_PER_DAY = 86_400_000;
 export const msToDays = (ms: number): number => ms / MS_PER_DAY;
 export const msToHours = (ms: number): number => ms / 3_600_000;
 
+/** Capacidad mensual por ingeniero (base para % de disponibilidad). Override: MSP_HOURS_PER_MONTH. */
+export const HOURS_PER_MONTH = Number(process.env.MSP_HOURS_PER_MONTH ?? "160");
+/** Milisegundos de un mes promedio (para prorratear la capacidad por rango). */
+export const MS_PER_MONTH = 30.4375 * MS_PER_DAY;
+/** Capacidad de horas para el rango [start,end]; null si el rango es abierto (sin fechas). */
+export function capacityHoursForRange(start?: number, end?: number): number | null {
+  if (start == null || end == null) return null;
+  return Math.round(HOURS_PER_MONTH * ((end - start) / MS_PER_MONTH) * 100) / 100;
+}
+
 /** Mes UTC 'YYYY-MM' de un epoch ms (determinístico para tests). */
 export function monthKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 7);

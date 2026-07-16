@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeMetrics } from "./metrics";
+import { computeUserScorecard } from "./user-scorecard";
 import { enrichTask } from "./enrich";
 import type {
   ClickUpDataset,
@@ -275,6 +276,49 @@ describe("computeMetrics (subtareas: no cuentan como tickets, pero sus horas sí
     expect(r.totals.hours).toBe(5); // ep (2) + es (3)
     expect(r.byList.find((l) => l.listId === "LA")!.hours).toBe(5);
     expect(r.byUser.find((u) => u.userId === 1)!.hours).toBe(5);
+  });
+});
+
+// ── computeUserScorecard: radar (Horas, Velocidad, Calidad, Tareas asignadas, Disponibilidad) ──
+describe("computeUserScorecard", () => {
+  it("expone capacidad efectiva prorrateada aun sin rango (para Disponibilidad)", () => {
+    const r = computeUserScorecard(dataset, 1);
+    // sin rango: ventana = primera actividad (01-01) → corte (06-01) ≈ 5 meses × 160 h.
+    expect(r.capacityHours).not.toBeNull();
+    expect(r.capacityHours!).toBeGreaterThan(700);
+    expect(r.capacityHours!).toBeLessThan(850);
+  });
+
+  it("capacidad prorrateada por el rango explícito (~160 h/mes)", () => {
+    const r = computeUserScorecard(dataset, 1, {
+      start: ms("2026-02-01T00:00:00Z"),
+      end: ms("2026-02-28T23:59:59Z"),
+    });
+    expect(r.capacityHours!).toBeGreaterThan(140);
+    expect(r.capacityHours!).toBeLessThan(155);
+  });
+
+  it("baseline del equipo incluye promedio y máximo de tareas abiertas", () => {
+    const r = computeUserScorecard(dataset, 1);
+    expect(r.team.avgOpen).toBe(0); // en el fixture todo está resuelto al corte
+    expect(r.team.maxOpen).toBe(1); // piso en 1 para normalizar el eje
+  });
+
+  it("cuenta tareas asignadas ABIERTAS al corte (eje Tareas asignadas)", () => {
+    const openDataset: ClickUpDataset = {
+      lists: [{ id: "LA", name: "LA", folderId: "F1", folderName: "Folder Latam" }],
+      tasks: [
+        task({ id: "o1", listId: "LA", status: "in progress", statusType: "custom", assignees: [u1], dateCreated: ms("2026-01-01T00:00:00Z") }),
+        task({ id: "o2", listId: "LA", status: "in progress", statusType: "custom", assignees: [u1], dateCreated: ms("2026-01-02T00:00:00Z") }),
+      ],
+      timeEntries: [],
+      statusHistory: {},
+      fetchedAt: ms("2026-06-01T00:00:00Z"),
+      timeRange: { start: ms("2025-06-01T00:00:00Z"), end: ms("2026-06-01T00:00:00Z") },
+    };
+    const r = computeUserScorecard(openDataset, 1);
+    expect(r.open).toBe(2);
+    expect(r.team.maxOpen).toBe(2);
   });
 });
 

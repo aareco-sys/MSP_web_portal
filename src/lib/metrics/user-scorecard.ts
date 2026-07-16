@@ -8,7 +8,7 @@
  */
 import type { ClickUpDataset, TimeEntry } from "@/lib/clickup/types";
 import { enrichTasks, type EnrichedTask } from "./enrich";
-import { monthKey, msToHours, summarize, type Summary } from "./stats";
+import { capacityHoursForRange, monthKey, msToHours, summarize, type Summary } from "./stats";
 import type { MetricsFilters } from "./types";
 
 const inRange = (ts: number | null, start?: number, end?: number): boolean => {
@@ -50,16 +50,24 @@ export interface UserScorecard extends UserStat {
   email: string;
   monthly: { month: string; resolved: number; hours: number; mttrDays: number | null }[];
   byClient: { listName: string; resolved: number; hours: number }[];
+  /**
+   * Capacidad de horas de la ventana (160 h/mes prorrateadas). Base del eje de
+   * disponibilidad. Usa el rango explícito, o —sin rango— desde la primera
+   * actividad hasta el corte, para que el eje siempre tenga base.
+   */
+  capacityHours: number | null;
   team: {
     size: number;
     avgResolved: number;
     avgHours: number;
+    avgOpen: number;
     avgHoursPerResolved: number | null;
     avgMttr: number | null;
     avgReopenRate: number;
     avgOverdueRate: number;
     maxResolved: number;
     maxHours: number;
+    maxOpen: number;
   };
 }
 
@@ -129,6 +137,19 @@ export function computeUserScorecard(
     entriesByUser.set(e.userId, arr);
   }
 
+  // Ventana efectiva para prorratear la capacidad (160 h/mes): el rango explícito,
+  // o desde la primera actividad hasta el corte cuando no hay rango. Así el eje de
+  // disponibilidad siempre tiene una base, incluso sin filtro de fechas en la URL.
+  let capStart = start;
+  if (capStart == null) {
+    let min = boundary;
+    for (const t of scoped) if (t.createdTs != null && t.createdTs < min) min = t.createdTs;
+    for (const arr of entriesByUser.values())
+      for (const e of arr) if (e.start != null && e.start < min) min = e.start;
+    capStart = min;
+  }
+  const capacityHours = capacityHoursForRange(capStart, boundary);
+
   // tareas por usuario (assignee).
   const tasksByUser = new Map<number, EnrichedTask[]>();
   const nameById = new Map<number, { username: string; email: string }>();
@@ -157,12 +178,14 @@ export function computeUserScorecard(
     size: stats.length,
     avgResolved: avg((s) => s.resolved),
     avgHours: avg((s) => s.hours),
+    avgOpen: avg((s) => s.open),
     avgHoursPerResolved: hprVals.length ? round2(mean(hprVals) as number) : null,
     avgMttr: mttrVals.length ? round2(mean(mttrVals) as number) : null,
     avgReopenRate: avg((s) => s.reopenRate),
     avgOverdueRate: avg((s) => s.overdueRate),
     maxResolved: Math.max(1, ...stats.map((s) => s.resolved)),
     maxHours: Math.max(1, ...stats.map((s) => s.hours)),
+    maxOpen: Math.max(1, ...stats.map((s) => s.open)),
   };
 
   // ── Detalle del ingeniero focal ──
@@ -227,6 +250,7 @@ export function computeUserScorecard(
     ...base,
     monthly,
     byClient,
+    capacityHours,
     team,
   };
 }
