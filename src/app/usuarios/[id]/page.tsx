@@ -25,12 +25,15 @@ export default function ScorecardPage() {
   const team = s.team;
   const tau = team.avgMttr || s.mttr.mean || 1;
   const speed = (m: number | null) => (m == null ? 0 : clamp(100 / (1 + m / tau)));
+  // Disponibilidad: 100 − (horas cargadas / capacidad del rango, 160 h/mes).
+  const cap = s.capacityHours;
+  const avail = (h: number) => (cap && cap > 0 ? clamp(100 * (1 - h / cap)) : 0);
   const radar = [
-    { axis: t.scorecard.axisThroughput, eng: clamp((s.resolved / team.maxResolved) * 100), team: clamp((team.avgResolved / team.maxResolved) * 100) },
     { axis: t.scorecard.axisHours, eng: clamp((s.hours / team.maxHours) * 100), team: clamp((team.avgHours / team.maxHours) * 100) },
     { axis: t.scorecard.axisSpeed, eng: speed(s.mttr.mean), team: speed(team.avgMttr) },
     { axis: t.scorecard.axisQuality, eng: clamp(100 - s.reopenRate), team: clamp(100 - team.avgReopenRate) },
-    { axis: t.scorecard.axisPunctuality, eng: clamp(100 - s.overdueRate), team: clamp(100 - team.avgOverdueRate) },
+    { axis: t.scorecard.axisAssigned, eng: clamp((s.open / team.maxOpen) * 100), team: clamp((team.avgOpen / team.maxOpen) * 100) },
+    { axis: t.scorecard.axisAvailability, eng: avail(s.hours), team: avail(team.avgHours) },
   ];
 
   const teamHint = t.scorecard.teamHint;

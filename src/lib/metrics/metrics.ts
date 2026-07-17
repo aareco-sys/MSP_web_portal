@@ -12,7 +12,7 @@
  */
 import type { ClickUpDataset, TimeEntry } from "@/lib/clickup/types";
 import { enrichTasks, type EnrichedTask } from "./enrich";
-import { monthKey, msToHours, summarize } from "./stats";
+import { capacityHoursForRange, monthKey, msToHours, summarize } from "./stats";
 import type {
   ListMetrics,
   MetricsFilters,
@@ -283,17 +283,10 @@ export function computeMetrics(
       timeRange: dataset.timeRange,
       filters,
       // Capacidad del rango: 160 h/mes prorrateadas por la duración del rango.
-      capacityHours:
-        start != null && end != null
-          ? round2(HOURS_PER_MONTH * ((end - start) / MS_PER_MONTH))
-          : null,
+      capacityHours: capacityHoursForRange(start, end),
     },
   };
 }
-
-/** Capacidad mensual por ingeniero (base para % de disponibilidad). Override: MSP_HOURS_PER_MONTH. */
-const HOURS_PER_MONTH = Number(process.env.MSP_HOURS_PER_MONTH ?? "160");
-const MS_PER_MONTH = 30.4375 * 86_400_000; // mes promedio
 
 function buildMonthly(
   createdInRange: EnrichedTask[],
