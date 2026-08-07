@@ -117,6 +117,10 @@ const es = {
     hoursByUser: "Horas registradas por ingeniero",
     loadByUser: "Carga de tareas por ingeniero",
     detail: "Detalle por ingeniero",
+    cardsTitle: "Equipo de ingeniería",
+    cardsSub: (n: string) => `${n} ingenieros con actividad — seleccioná uno para ver su detalle`,
+    tasksMeta: (tasks: string, projects: string, subtasks: string) =>
+      `${tasks} tareas · ${projects} proyectos · ${subtasks} subtareas`,
     avgHint: "Horas exactas según quién imputó (no repartidas entre asignados).",
     projects: "Proyectos",
     assignedPct: "% asignado",
@@ -176,7 +180,7 @@ const es = {
     noSubtasks: "Sin subtareas",
   },
   scorecard: {
-    back: "← Volver a Usuarios",
+    back: "← Volver a Ingenieros",
     hoursPerTask: "Horas / tarea",
     overdueRate: "% vencidas",
     clients: "Clientes atendidos",
@@ -325,6 +329,10 @@ const en: Messages = {
     hoursByUser: "Hours tracked by engineer",
     loadByUser: "Task load by engineer",
     detail: "Engineer detail",
+    cardsTitle: "Engineering team",
+    cardsSub: (n: string) => `${n} engineers with activity — select one to see their detail`,
+    tasksMeta: (tasks: string, projects: string, subtasks: string) =>
+      `${tasks} tasks · ${projects} projects · ${subtasks} subtasks`,
     avgHint: "Exact hours by who logged them (not split across assignees).",
     projects: "Projects",
     assignedPct: "% assigned",
@@ -384,7 +392,7 @@ const en: Messages = {
     noSubtasks: "No subtasks",
   },
   scorecard: {
-    back: "← Back to Users",
+    back: "← Back to Engineers",
     hoursPerTask: "Hours / task",
     overdueRate: "% overdue",
     clients: "Clients handled",
