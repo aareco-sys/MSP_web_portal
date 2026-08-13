@@ -298,6 +298,59 @@ table.tbl { width: 100%; border-collapse: collapse; font-family: var(--font-body
 .loader { display: grid; place-items: center; min-height: 50vh; gap: var(--space-4); color: var(--color-fg-muted); font-size: var(--fs-body-sm); }
 .spinner { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--dc-green-100); border-top-color: var(--color-brand); animation: spin 0.8s linear infinite; }
 
+/* ---------- View toggle (tabs sueltas, ej. usuarios/[id]) ---------- */
+.view-toggle { display: inline-flex; gap: 4px; background: var(--dc-ink-100); border-radius: var(--radius-pill); padding: 4px; }
+.view-toggle button { border: none; background: transparent; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 13px; color: var(--color-fg-muted); padding: 8px 16px; border-radius: var(--radius-pill); transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.view-toggle button.is-active { background: var(--dc-white); color: var(--color-fg); box-shadow: var(--shadow-sm); }
+
+/* ---------- Ficha técnica ---------- */
+.ficha { display: flex; flex-direction: column; gap: var(--space-4); }
+.ficha-banner { position: relative; overflow: hidden; display: flex; align-items: center; gap: 22px; padding: 28px 32px; border-radius: var(--radius-lg); background: radial-gradient(circle at 30% 20%, var(--dc-green-500) 0%, var(--dc-green-400) 100%); color: var(--dc-white); }
+.ficha-banner__avatar { width: 64px; height: 64px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.45); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 22px; flex: none; }
+.ficha-banner__id { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.ficha-banner__eyebrow { font-family: var(--font-display); font-weight: 500; font-size: 12px; letter-spacing: 0.06em; text-transform: lowercase; color: rgba(255, 255, 255, 0.8); }
+.ficha-banner__name { font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.03em; }
+.ficha-banner__avg { text-align: right; display: flex; flex-direction: column; gap: 2px; flex: none; }
+.ficha-banner__avg-val { font-family: var(--font-display); font-weight: 700; font-size: 36px; letter-spacing: -0.03em; }
+.ficha-banner__avg-label { font-family: var(--font-body); font-size: 12px; color: rgba(255, 255, 255, 0.85); }
+
+.ficha-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+@media (max-width: 720px) { .ficha-metrics { grid-template-columns: 1fr; } }
+.ficha-metric { background: var(--dc-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); display: flex; flex-direction: column; gap: 4px; }
+.ficha-metric__val { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -0.02em; color: var(--dc-green-500); }
+.ficha-metric__label { font-family: var(--font-body); font-size: 12px; color: var(--color-fg-muted); }
+
+.ficha-radar-card { padding: var(--space-5); }
+.ficha-radar-row { display: grid; grid-template-columns: 280px 1fr; gap: var(--space-8); align-items: center; }
+@media (max-width: 900px) { .ficha-radar-row { grid-template-columns: 1fr; } }
+.ficha-radar-legend { display: flex; flex-direction: column; gap: 10px; }
+.ficha-radar-legend__title { font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: lowercase; color: var(--color-fg-muted); }
+.ficha-radar-legend__row { display: flex; align-items: center; gap: 12px; }
+.ficha-radar-legend__label { width: 150px; font-family: var(--font-body); font-size: 13px; color: var(--color-fg); flex: none; }
+.ficha-radar-legend__val { width: 30px; text-align: right; font-family: var(--font-display); font-weight: 600; font-size: 13px; color: var(--color-fg-muted); flex: none; }
+.ficha-radar-legend__summary { margin-top: 4px; font-family: var(--font-body); font-size: 12px; line-height: 1.6; color: var(--color-fg-subtle); }
+
+.ficha-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+@media (max-width: 900px) { .ficha-cols { grid-template-columns: 1fr; } }
+.ficha-col { background: var(--dc-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.ficha-col__heading { font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-fg); padding-bottom: 8px; border-bottom: 2px solid var(--dc-green-900); }
+
+.ficha-skill { display: flex; flex-direction: column; gap: 5px; }
+.ficha-skill__row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ficha-skill__name { font-family: var(--font-body); font-size: 14px; color: var(--color-fg); }
+.ficha-skill__val { font-family: var(--font-display); font-weight: 600; font-size: 13px; }
+.ficha-skill__track { height: 6px; background: var(--dc-ink-100); border-radius: 3px; overflow: hidden; }
+.ficha-skill__fill { display: block; height: 100%; border-radius: 3px; }
+.ficha-skill__note { font-family: var(--font-body); font-size: 11px; color: var(--color-fg-subtle); min-height: 14px; }
+
+.ficha-certs { margin-top: 4px; background: var(--dc-green-25); border: 1px solid var(--dc-green-100); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.ficha-certs__heading { font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: lowercase; color: var(--dc-green-900); }
+.ficha-certs__list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ficha-cert-badge { font-family: var(--font-body); font-size: 12px; color: var(--dc-white); background: var(--dc-green-900); padding: 5px 11px; border-radius: var(--radius-pill); }
+.ficha-form-badge { font-family: var(--font-body); font-size: 12px; color: var(--dc-green-900); background: var(--dc-white); border: 1px solid var(--dc-green-200); padding: 5px 11px; border-radius: var(--radius-pill); }
+
+.ficha-footer { font-family: var(--font-body); font-size: 11px; color: var(--color-fg-subtle); text-align: center; padding-top: var(--space-2); }
+
 /* ============================================================ REPORT (print) */
 .report-shell { background: var(--dc-white); }
 .report-page { max-width: 1000px; margin: 0 auto; padding: var(--space-8); }

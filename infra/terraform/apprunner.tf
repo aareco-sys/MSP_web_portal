@@ -26,7 +26,7 @@ resource "aws_apprunner_service" "app" {
       image_configuration {
         port = "3000"
 
-        runtime_environment_variables = merge(var.app_env, var.clickup_config, {
+        runtime_environment_variables = merge(var.app_env, var.clickup_config, var.google_sheets_config, {
           # Auth (Cognito OIDC). El client secret va por Secrets Manager (abajo).
           AUTH_URL                 = var.app_base_url
           COGNITO_CLIENT_ID        = aws_cognito_user_pool_client.app.id
@@ -38,9 +38,10 @@ resource "aws_apprunner_service" "app" {
 
         # Secretos inyectados por ARN (App Runner los resuelve en runtime).
         runtime_environment_secrets = {
-          CLICKUP_TOKEN         = aws_secretsmanager_secret.clickup_token.arn
-          AUTH_SECRET           = aws_secretsmanager_secret.auth_secret.arn
-          COGNITO_CLIENT_SECRET = aws_secretsmanager_secret.cognito_client_secret.arn
+          CLICKUP_TOKEN                       = aws_secretsmanager_secret.clickup_token.arn
+          AUTH_SECRET                         = aws_secretsmanager_secret.auth_secret.arn
+          COGNITO_CLIENT_SECRET               = aws_secretsmanager_secret.cognito_client_secret.arn
+          GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY  = aws_secretsmanager_secret.google_service_account_key.arn
         }
       }
     }

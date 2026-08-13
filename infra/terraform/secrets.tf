@@ -50,3 +50,20 @@ resource "aws_secretsmanager_secret_version" "cognito_client_secret" {
   secret_id     = aws_secretsmanager_secret.cognito_client_secret.id
   secret_string = aws_cognito_user_pool_client.app.client_secret
 }
+
+# GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY — private key (PEM) del service account de
+# GCP usado para leer la matriz de skills (fichas técnicas). Ver
+# docs/google-sheets-setup.md para cómo generarla. Obligatorio solo si la
+# feature de fichas técnicas está habilitada.
+resource "aws_secretsmanager_secret" "google_service_account_key" {
+  name        = "${local.secret_prefix}google-service-account-key"
+  description = "GCP service account private key (Google Sheets, fichas técnicas). DinoCloud Internal - Confidential."
+}
+
+resource "aws_secretsmanager_secret_version" "google_service_account_key" {
+  secret_id     = aws_secretsmanager_secret.google_service_account_key.id
+  secret_string = "PLACEHOLDER_SET_VIA_CLI" # se reemplaza por CLI; ver ignore_changes
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}

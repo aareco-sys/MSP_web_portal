@@ -13,18 +13,24 @@ export function Loading({ label }: { label?: string }) {
   );
 }
 
+/** Nombre de env var faltante mencionado en el mensaje (CLICKUP_TOKEN,
+ * GOOGLE_SERVICE_ACCOUNT_EMAIL, etc.), si lo hay. */
+function missingEnvVar(message: string): string | null {
+  return message.match(/[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+/)?.[0] ?? null;
+}
+
 export function ErrorState({ message }: { message: string }) {
   const t = useT();
-  const isToken = /CLICKUP_TOKEN/i.test(message);
+  const envVar = missingEnvVar(message);
   return (
     <div className="card" style={{ alignItems: "center", textAlign: "center", gap: 8, padding: 48 }}>
       <Inbox className="size-6" style={{ color: "var(--color-danger)" }} />
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>{t.states.loadError}</div>
       <div style={{ fontSize: 14, color: "var(--color-fg-muted)", maxWidth: 460 }}>{message}</div>
-      {isToken ? (
+      {envVar ? (
         <div style={{ fontSize: 12, color: "var(--color-fg-subtle)", maxWidth: 460 }}>
           {t.states.tokenHintPre}
-          <code>CLICKUP_TOKEN</code>
+          <code>{envVar}</code>
           {t.states.tokenHintPost}
         </div>
       ) : null}
