@@ -42,9 +42,10 @@ output "custom_domain_validation_records" {
 }
 
 output "secret_arns" {
-  description = "ARNs de los secretos a cargar por CLI (CLICKUP_TOKEN, AUTH_SECRET)."
+  description = "ARNs de los secretos a cargar por CLI (CLICKUP_TOKEN, AUTH_SECRET, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY)."
   value = {
-    clickup_token = aws_secretsmanager_secret.clickup_token.arn
-    auth_secret   = aws_secretsmanager_secret.auth_secret.arn
+    clickup_token               = aws_secretsmanager_secret.clickup_token.arn
+    auth_secret                 = aws_secretsmanager_secret.auth_secret.arn
+    google_service_account_key = aws_secretsmanager_secret.google_service_account_key.arn
   }
 }

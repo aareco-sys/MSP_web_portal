@@ -73,6 +73,16 @@ variable "clickup_config" {
   default     = {}
 }
 
+variable "google_sheets_config" {
+  type        = map(string)
+  description = <<-EOT
+    Config no secreta de Google Sheets (fichas técnicas): GOOGLE_SHEETS_SPREADSHEET_ID,
+    GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SHEETS_SKILLS_RANGE. La private key va por
+    Secrets Manager (ver secrets.tf). Cargar en terraform.tfvars.
+  EOT
+  default     = {}
+}
+
 # ── DNS / dominio ───────────────────────────────────────────────────────────────
 variable "domain_name" {
   type        = string

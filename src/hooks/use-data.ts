@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import type { MetricsResult, UserScorecard } from "@/lib/metrics";
 import type { RexMetrics } from "@/lib/rex";
+import type { FichaView } from "@/lib/skills";
 
 export interface FilterOptions {
   folders: { id: string; name: string }[];
@@ -63,6 +64,15 @@ export function useUserScorecard(userId: string) {
   return useQuery({
     queryKey: ["scorecard", userId, q],
     queryFn: () => getJson<{ scorecard: UserScorecard }>(`/api/users/${userId}${q ? `?${q}` : ""}`),
+  });
+}
+
+/** Ficha técnica (matriz de skills) de un ingeniero; null si no hay match en la hoja. */
+export function useUserSkills(userId: string) {
+  return useQuery({
+    queryKey: ["skills", userId],
+    queryFn: () => getJson<{ ficha: FichaView | null }>(`/api/users/${userId}/skills`),
+    staleTime: 5 * 60_000,
   });
 }
 

@@ -23,6 +23,15 @@ clickup_config = {
   CLICKUP_REX_LIST_ID        = ""
 }
 
+# Google Sheets (fichas técnicas / matriz de skills). NO secreto; la private key
+# del service account se carga por CLI en Secrets Manager (ver
+# docs/google-sheets-setup.md y RUNBOOK). Dejar vacío para deshabilitar la feature.
+google_sheets_config = {
+  GOOGLE_SHEETS_SPREADSHEET_ID = ""
+  GOOGLE_SERVICE_ACCOUNT_EMAIL = "" # termina en .iam.gserviceaccount.com
+  GOOGLE_SHEETS_SKILLS_RANGE   = "Hoja 1!A:I"
+}
+
 # CI/CD (OIDC). El repo autorizado a deployar a prod.
 github_owner         = "aareco-sys"
 github_repo          = "MSP_web_portal"

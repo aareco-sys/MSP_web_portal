@@ -49,6 +49,7 @@ data "aws_iam_policy_document" "read_secrets" {
       aws_secretsmanager_secret.clickup_token.arn,
       aws_secretsmanager_secret.auth_secret.arn,
       aws_secretsmanager_secret.cognito_client_secret.arn,
+      aws_secretsmanager_secret.google_service_account_key.arn,
     ]
   }
 }
